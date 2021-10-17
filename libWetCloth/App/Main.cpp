@@ -17,6 +17,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include "Main.h"
 
 #ifdef WIN32
 #include <direct.h>
@@ -566,71 +567,76 @@ void miscOutputCallback() {
 }
 
 int main(int argc, char** argv) {
-  Eigen::initParallel();
-  Eigen::setNbThreads(std::thread::hardware_concurrency());
+    
+    executeMain(argc, argv);
+}
 
-  srand(0x0108170F);
+int executeMain(int argc, char** argv) {
+    Eigen::initParallel();
+    Eigen::setNbThreads(std::thread::hardware_concurrency());
 
-  // Parse command line arguments
-  parseCommandLine(argc, argv);
+    srand(0x0108170F);
 
-  std::vector<std::string> pathes;
+    // Parse command line arguments
+    parseCommandLine(argc, argv);
 
-  stringutils::split(g_xml_scene_file, '/', pathes);
+    std::vector<std::string> pathes;
 
-  std::vector<std::string> path_first;
+    stringutils::split(g_xml_scene_file, '/', pathes);
 
-  stringutils::split(pathes[pathes.size() - 1], '.', path_first);
+    std::vector<std::string> path_first;
 
-  g_short_file_name = path_first[0];
+    stringutils::split(pathes[pathes.size() - 1], '.', path_first);
+
+    g_short_file_name = path_first[0];
 
 #ifdef WIN32
-  _mkdir(g_short_file_name.c_str());
+    _mkdir(g_short_file_name.c_str());
 #else
-  mkdir(g_short_file_name.c_str(), 0777);
+    mkdir(g_short_file_name.c_str(), 0777);
 #endif
 
-  // Function to cleanup at progarm exit
-  atexit(cleanupAtExit);
+    // Function to cleanup at progarm exit
+    atexit(cleanupAtExit);
 
-  // Load the user-specified scene
-  loadScene(g_xml_scene_file);
+    // Load the user-specified scene
+    loadScene(g_xml_scene_file);
 
-  // If requested, open the input file for the scene to benchmark
+    // If requested, open the input file for the scene to benchmark
 #ifdef RENDER_ENABLED
   // Initialization for OpenGL and GLUT
-  if (g_rendering_enabled) initializeOpenGLandGLUT(argc, argv);
+    if (g_rendering_enabled) initializeOpenGLandGLUT(argc, argv);
 #endif
-  // Print a header
-  std::cout << main_header << std::endl;
+    // Print a header
+    std::cout << main_header << std::endl;
 
 #ifdef CMAKE_BUILD_TYPE
-  std::cout << outputmod::startblue << "Build type: " << outputmod::endblue
-            << CMAKE_BUILD_TYPE << std::endl;
+    std::cout << outputmod::startblue << "Build type: " << outputmod::endblue
+        << CMAKE_BUILD_TYPE << std::endl;
 #endif
 #ifdef EIGEN_VECTORIZE
-  std::cout << outputmod::startblue << "Vectorization: " << outputmod::endblue
-            << "Enabled" << std::endl;
+    std::cout << outputmod::startblue << "Vectorization: " << outputmod::endblue
+        << "Enabled" << std::endl;
 #else
-  std::cout << outputmod::startblue << "Vectorization: " << outputmod::endblue
-            << "Disabled" << std::endl;
+    std::cout << outputmod::startblue << "Vectorization: " << outputmod::endblue
+        << "Disabled" << std::endl;
 #endif
 
-  std::cout << outputmod::startblue << "Scene: " << outputmod::endblue
-            << g_xml_scene_file << std::endl;
-  std::cout << outputmod::startblue << "Integrator: " << outputmod::endblue
-            << g_executable_simulation->getSolverName() << std::endl;
+    std::cout << outputmod::startblue << "Scene: " << outputmod::endblue
+        << g_xml_scene_file << std::endl;
+    std::cout << outputmod::startblue << "Integrator: " << outputmod::endblue
+        << g_executable_simulation->getSolverName() << std::endl;
 
-  std::cout << outputmod::startblue
-            << "Global Parameters: " << outputmod::endblue << std::endl
-            << g_executable_simulation->getLiquidInfo() << std::endl;
+    std::cout << outputmod::startblue
+        << "Global Parameters: " << outputmod::endblue << std::endl
+        << g_executable_simulation->getLiquidInfo() << std::endl;
 #ifdef RENDER_ENABLED
-  if (g_rendering_enabled)
-    glutMainLoop();
-  else
-    headlessSimLoop();
+    if (g_rendering_enabled)
+        glutMainLoop();
+    else
+        headlessSimLoop();
 #else
-  headlessSimLoop();
+    headlessSimLoop();
 #endif
-  return 0;
+    return 0;
 }
