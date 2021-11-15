@@ -25,14 +25,7 @@ endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   add_definitions (-DDEBUG)
-  # Modifying DEBUG build flags
-  # set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wall -W -Wshadow -Wunused-variable \
-  -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers \
-  -Wno-deprecated -Woverloaded-virtual -Wwrite-strings -fprofile-arcs -ftest-coverage")
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -Wall -W -fprofile-arcs -ftest-coverage")
 endif (CMAKE_BUILD_TYPE MATCHES Debug)
-  SET(CMAKE_EXE_LINKER_FLAGS="-fprofile-arcs -ftest-coverage")
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
   add_definitions (-DNDEBUG)
@@ -75,4 +68,3 @@ if (NOT WIN32)
   execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SOURCE_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/libWetCloth/assets )
 endif ()
 
-enable_testing()

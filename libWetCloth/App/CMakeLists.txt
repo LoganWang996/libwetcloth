@@ -75,17 +75,3 @@ set_target_properties(WetClothApp PROPERTIES
     CXX_EXTENSIONS OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-target_link_libraries(WetClothApp gcov)
-enable_testing()
-add_test(RunTest WetClothApp "-s" "../assets/unit_tests/simple_yarn.xml")
-set_tests_properties(RunTest PROPERTIES WILL_FAIL TRUE)
-
-add_test(success_test WetClothApp "-s" "../assets/unit_tests/simple_yarn.xml")
-set_tests_properties(success_test PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS")
-
-add_test(fail_test WetClothApp "-s" "../assets/unit_tests/simple_yarn.xml")
-set_tests_properties(fail_test PROPERTIES WILL_FAIL TRUE)
-
-add_test(fail_test_output WetClothApp "-s" "../assets/unit_tests/simple_yarn.xml")
-set_tests_properties(fail_test_output PROPERTIES PASS_REGULAR_EXPRESSION "FAIL")
