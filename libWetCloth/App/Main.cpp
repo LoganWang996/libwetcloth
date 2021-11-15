@@ -17,7 +17,6 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
-#include "Main.h"
 
 #ifdef WIN32
 #include <direct.h>
