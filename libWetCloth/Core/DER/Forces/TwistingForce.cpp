@@ -92,6 +92,20 @@ void TwistingForce<ViscousT>::addInPosition(VecX& globalForce,
 }
 
 template <typename ViscousT>
+void TwistingForce<ViscousT>::addTwist(VecX& globalForce,
+  const IndexType vtx, 
+  scalar t) {
+
+  Eigen::Matrix<scalar, 11, 1> twist = Eigen::Matrix<scalar, 11, 1>::Zero();
+  for (int i = 3; i < 11; i += 4)
+  {
+    twist(i) = t;
+  }
+  globalForce.segment<11>(4 * (vtx - 1)) += twist;
+  // globalForce.segment<11>(4 * (vtx - 1)) += toAdd;
+}
+
+template <typename ViscousT>
 void TwistingForce<ViscousT>::addInPosition(VecX& globalMultiplier,
                                             const IndexType vtx,
                                             const LocalMultiplierType& localL) {

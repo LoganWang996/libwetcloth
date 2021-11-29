@@ -1082,6 +1082,8 @@ void TwoDSceneXMLParser::loadScripts(
         scr->type = Script::ROTATE;
       else if (handlertype == "translate")
         scr->type = Script::TRANSLATE;
+      else if (handlertype == "twist")
+        scr->type = Script::TWIST;
       else {
         std::cerr << outputmod::startred
                   << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
@@ -1321,6 +1323,32 @@ void TwoDSceneXMLParser::loadScripts(
                   << " Failed to parse value of global attribute for script. "
                      "Value must be boolean. Exiting."
                   << std::endl;
+        exit(1);
+      }
+    }
+
+    scr->script_node = 0;
+    if (nd->first_attribute("node")) {
+      std::string attribute(nd->first_attribute("node")->value());
+      if (!stringutils::extractFromString(attribute, scr->script_node)) {
+        std::cerr << outputmod::startred
+          << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+          << " Failed to parse value of node attribute for script. Value "
+          "must be integer. Exiting."
+          << std::endl;
+        exit(1);
+      }
+    }
+
+    scr->strand = 0;
+    if (nd->first_attribute("strand")) {
+      std::string attribute(nd->first_attribute("strand")->value());
+      if (!stringutils::extractFromString(attribute, scr->strand)) {
+        std::cerr << outputmod::startred
+          << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+          << " Failed to parse value of strand attribute for script. Value "
+          "must be integer. Exiting."
+          << std::endl;
         exit(1);
       }
     }
@@ -1833,8 +1861,11 @@ void TwoDSceneXMLParser::loadHairs(rapidxml::xml_node<>* node,
       twodscene->setEdgeToParameter(eidx, idx_sp);
     }
 
-    twodscene->insertForce(std::make_shared<StrandForce>(
-        twodscene, particle_indices, idx_sp, numstrands));
+    auto strandf = std::make_shared<StrandForce>(
+      twodscene, particle_indices, idx_sp, numstrands);
+
+    twodscene->insertForce(strandf);
+    twodscene->insertStrandForce(strandf);
 
     VectorXi solve_group(particle_indices.size());
     for (int i = 0; i < (int)particle_indices.size(); ++i)

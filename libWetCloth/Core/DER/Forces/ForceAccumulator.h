@@ -32,6 +32,17 @@ class ForceAccumulator {
     }
   }
 
+  static void accumulateScripted(scalar& energy, int vtx, scalar t) {
+    
+  }
+
+  static void accumulateScripted(VecX& force, int vtx, scalar t) {
+    // add scripted twist
+    if (std::is_same<ForceT, TwistingForce<NonViscous>>::value) {
+      TwistingForce<NonViscous>::addTwist(force, vtx, t);
+    }
+  }
+
   static void accumulateMultipliers(VecX& multipliers,
                                     const StrandForce& strand,
                                     const scalar& dt) {

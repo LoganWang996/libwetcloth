@@ -7438,6 +7438,15 @@ void TwoDScene::insertForce(const std::shared_ptr<Force>& newforce) {
   m_forces.push_back(newforce);
 }
 
+void TwoDScene::insertStrandForce(const std::shared_ptr<StrandForce>& newforce) {
+  m_strands.push_back(newforce);
+}
+
+void TwoDScene::setStrandForceScript(int strand_idx, int node, scalar t)
+{
+  m_strands[strand_idx]->AddScriptedForce(node, t);
+}
+
 scalar TwoDScene::computeKineticEnergy() const {
   scalar T = 0.0;
   for (int i = 0; i < getNumParticles(); ++i) {

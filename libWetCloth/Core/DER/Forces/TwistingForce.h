@@ -57,6 +57,8 @@ class TwistingForce {
       const unsigned& tildek_start, const unsigned& global_start_dof,
       StrandForce& strand, VectorXs& lambda, TripletXs& J, TripletXs& tildeK,
       TripletXs& stiffness, VectorXs& Phi, const int& lambda_start);
+
+  static void addTwist(VecX& globalForce, const IndexType vtx, scalar t);
 };
 
 #endif

@@ -249,6 +249,14 @@ void StrandForce::recomputeGlobal() {
   accumulateQuantity(m_strandForceUpdate);
   accumulateHessian(m_strandHessianUpdate, m_strandAngularHessianUpdate);
 
+  for (int i = 0; i < scripted_twist_nodes.size(); ++i)
+  {
+    ForceAccumulator<TwistingForce<NonViscous> >::accumulateScripted(
+      m_strandForceUpdate, (IndexType)scripted_twist_nodes[i], (scalar)scripted_twist_forces[i]);
+  }
+  scripted_twist_nodes.clear();
+  scripted_twist_forces.clear();
+
   // Free some memory
   m_strandState->m_hessTwists.free();
   m_strandState->m_hessKappas.free();
@@ -439,3 +447,9 @@ int StrandForce::numAngularHessX() {
 }
 
 int StrandForce::flag() const { return 1; }
+
+void StrandForce::AddScriptedForce(int node, scalar t)
+{
+  scripted_twist_nodes.push_back(node);
+  scripted_twist_forces.push_back(t);
+}

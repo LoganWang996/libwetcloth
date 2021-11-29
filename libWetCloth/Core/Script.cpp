@@ -97,6 +97,10 @@ void Script::stepScript(const scalar& dt, const scalar& current_time) {
         }
         break;
       }
+      case Script::TWIST: {
+        m_scene->setStrandForceScript(strand, script_node, v(3));
+        break;
+      }
       default:
         std::cout << "UNIMPLEMENTED SCRIPT TYPE [" << type << "]!" << std::endl;
         break;

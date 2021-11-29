@@ -144,6 +144,8 @@ class StrandForce : public Force {
 
   void accumulateHessian(TripletXs& accumulated, TripletXs& accumulated_twist);
 
+  void AddScriptedForce(int node, scalar t);
+
  private:
   //// FOSSSim related //////////////////////////////////////////////////
   std::vector<int> m_verts;  // in order root to tip
@@ -185,6 +187,9 @@ class StrandForce : public Force {
   std::vector<scalar> m_vertexMasses;
   Vec4Array m_restKappas;
   std::vector<scalar> m_restTwists;
+
+  std::vector<int> scripted_twist_nodes;
+  std::vector<scalar> scripted_twist_forces;
 
   //// Friends /////////////////////////////////////////////////////////
   friend class Viscous;

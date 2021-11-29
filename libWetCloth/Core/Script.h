@@ -22,6 +22,7 @@ struct Script {
   enum TYPE {
     ROTATE,
     TRANSLATE,
+    TWIST,
 
     TYPE_COUNT
   };
@@ -37,6 +38,8 @@ struct Script {
   TYPE type;
   FUNC func;
   int group_index;
+  int script_node;
+  int strand;
   Vector4s v;
   Vector3s origin;
   scalar start;
@@ -46,7 +49,7 @@ struct Script {
   scalar amplitude;
   scalar frequency;
   scalar base_dt;
-  scalar base_pos;
+  scalar base_pos; 
 
   std::shared_ptr<TwoDScene> m_scene;
 
