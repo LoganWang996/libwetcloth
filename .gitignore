@@ -16,3 +16,8 @@ log*.*
 *.off
 result*/*
 *.xcuserstate
+*.html
+*.css
+*.js
+*.png
+*.txt
