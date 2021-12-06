@@ -36,8 +36,6 @@ class LinearizedImplicitEuler : public SceneStepper {
 
   virtual bool stepVelocityLagrangian(TwoDScene& scene, scalar dt);
 
-  virtual bool projectFine(TwoDScene& scene, scalar dt);
-
   virtual bool acceptVelocity(TwoDScene& scene);
 
   virtual bool stepImplicitElasto(TwoDScene& scene, scalar dt);
@@ -63,15 +61,9 @@ class LinearizedImplicitEuler : public SceneStepper {
 
   virtual bool stepImplicitElastoAMGPCG(TwoDScene& scene, scalar dt);
 
-  virtual bool applyPressureDragElasto(TwoDScene& scene, scalar dt);
-
-  virtual bool applyPressureDragFluid(TwoDScene& scene, scalar dt);
-
   virtual bool manifoldPropagate(TwoDScene& scene, scalar dt);
 
   virtual bool advectSurfTension(TwoDScene& scene, scalar dt);
-
-  virtual scalar computeDivergence(TwoDScene& scene);
 
   virtual void pushFluidVelocity();
 

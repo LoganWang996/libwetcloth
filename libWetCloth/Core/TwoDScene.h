@@ -732,9 +732,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void estimateVolumeFractions(std::vector<VectorXs>& volumes,
                                const std::vector<VectorXs>& node_pos,
                                const Vector3s& np_offset);
-  void updateOptiVolume();
-  void splitLiquidParticles();
-  void mergeLiquidParticles();
   void relabelLiquidParticles();
   void updateRestPos();
   bool useBiCGSTAB() const;
@@ -803,8 +800,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   const VectorXuc& getOutsideInfo() const;
 
   void sampleSolidDistanceFields();
-
-  void sampleLiquidDistanceFields(scalar cur_time);
 
   scalar computePhiVel(
       const Vector3s& pos, Vector3s& vel,

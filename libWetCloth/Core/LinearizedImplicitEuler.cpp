@@ -14,7 +14,6 @@
 
 #include "AlgebraicMultigrid.h"
 #include "MathUtilities.h"
-#include "Pressure.h"
 #include "ThreadUtils.h"
 #include "Viscosity.h"
 #include "Array3Utils.h"
@@ -578,27 +577,8 @@ void LinearizedImplicitEuler::constructNodeForce(
   scene.accumulateFluidNodeGradU(node_rhs_fluid_x, node_rhs_fluid_y,
                                  node_rhs_fluid_z, -dt);
 
-  ////////    // add grad pp to rhs
-  pressure::computePorePressureGrads(scene, node_rhs_fluid_x, node_rhs_fluid_y,
-                                     node_rhs_fluid_z, scene.getNodeFluidVolX(),
-                                     scene.getNodeFluidVolY(),
-                                     scene.getNodeFluidVolZ(), dt);
+  ////////    // add grad pp to rhs (removed)
 
-  if (scene.getLiquidInfo().apply_pore_pressure_solid) {
-    pressure::computePorePressureGrads(
-        scene, node_rhs_x, node_rhs_y, node_rhs_z, scene.getNodeVolX(),
-        scene.getNodeVolY(), scene.getNodeVolZ(), dt);
-  }
-
-  if (scene.useSurfTension()) {
-    pressure::applySurfTensionFluid(
-        scene, scene.getNodeSurfTensionP(), node_rhs_fluid_x, node_rhs_fluid_y,
-        node_rhs_fluid_z, scene.getNodeFluidVolX(), scene.getNodeFluidVolY(),
-        scene.getNodeFluidVolZ());
-    pressure::applySurfTensionFluid(
-        scene, scene.getNodeSurfTensionP(), node_rhs_x, node_rhs_y, node_rhs_z,
-        scene.getNodeVolX(), scene.getNodeVolY(), scene.getNodeVolZ());
-  }
 
   if (scene.getLiquidInfo().solve_solid) {
     MatrixXs rhs_gauss(scene.getNumGausses() * 3, 3);
@@ -1145,33 +1125,6 @@ void LinearizedImplicitEuler::constructInvMDV(TwoDScene& scene) {
       }
     }
   });
-}
-
-scalar LinearizedImplicitEuler::computeDivergence(TwoDScene& scene) {
-  std::vector<VectorXs> node_ic;
-  allocateCenterNodeVectors(scene, node_ic);
-
-  std::vector<scalar> bucket_rms(node_ic.size());
-
-  pressure::constructNodeIncompressibleCondition(
-      scene, node_ic, m_node_v_fluid_plus_x, m_node_v_fluid_plus_y,
-      m_node_v_fluid_plus_z, m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z);
-
-  scene.getParticleBuckets().for_each_bucket([&](int bucket_idx) {
-    bucket_rms[bucket_idx] = node_ic[bucket_idx].squaredNorm();
-  });
-
-  scalar rms = 0.0;
-  int count = 0;
-  const int num_buckets = node_ic.size();
-  for (int i = 0; i < num_buckets; ++i) {
-    rms += bucket_rms[i];
-    count += (int)node_ic[i].size();
-  }
-
-  count = std::max(1, count);
-
-  return sqrt(rms / (scalar)count);
 }
 
 bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
@@ -2349,37 +2302,6 @@ bool LinearizedImplicitEuler::stepImplicitElasto(TwoDScene& scene, scalar dt) {
   }
 }
 
-bool LinearizedImplicitEuler::applyPressureDragElasto(TwoDScene& scene,
-                                                      scalar dt) {
-  if (scene.getNumFluidParticles() == 0) return false;
-
-  int ndof_elasto = scene.getNumSoftElastoParticles() * 4;
-
-  // u_f^*
-  const auto& m_node_v_f_star_x = scene.getNodeFluidVelocityX();
-  const auto& m_node_v_f_star_y = scene.getNodeFluidVelocityY();
-  const auto& m_node_v_f_star_z = scene.getNodeFluidVelocityZ();
-
-  // solve elasto
-  if (ndof_elasto > 0) {
-    if (scene.getLiquidInfo().apply_pressure_solid)
-      pressure::applyPressureGradsElastoRHS(
-          scene, scene.getNodePressure(), m_node_rhs_x, m_node_rhs_y,
-          m_node_rhs_z, m_node_mfhdvm_hdvm_x, m_node_mfhdvm_hdvm_y,
-          m_node_mfhdvm_hdvm_z, dt);
-    //
-    addFluidDragRHS(scene, m_node_v_f_star_x, m_node_v_f_star_y,
-                    m_node_v_f_star_z, m_node_rhs_x, m_node_rhs_y,
-                    m_node_rhs_z);
-
-    performInvLocalSolve(scene, m_node_rhs_x, m_node_rhs_y, m_node_rhs_z,
-                         m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
-                         m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z);
-  }
-
-  return true;
-}
-
 void LinearizedImplicitEuler::pushFluidVelocity() {
   m_fluid_vel_stack.push(m_node_v_fluid_plus_x);
   m_fluid_vel_stack.push(m_node_v_fluid_plus_y);
@@ -2430,172 +2352,6 @@ void LinearizedImplicitEuler::popElastoVelocity() {
   m_elasto_vel_stack.pop();
   m_node_v_plus_x = m_elasto_vel_stack.top();
   m_elasto_vel_stack.pop();
-}
-
-bool LinearizedImplicitEuler::applyPressureDragFluid(TwoDScene& scene,
-                                                     scalar dt) {
-  if (scene.getNumFluidParticles() == 0) return false;
-
-  const std::vector<VectorXs>& node_mass_fluid_x = scene.getNodeFluidMassX();
-  const std::vector<VectorXs>& node_mass_fluid_y = scene.getNodeFluidMassY();
-  const std::vector<VectorXs>& node_mass_fluid_z = scene.getNodeFluidMassZ();
-
-  // update liquid velocity
-  if (scene.getNumFluidParticles() > 0) {
-    // apply pressure
-    std::vector<VectorXs>& node_pressure = scene.getNodePressure();
-
-    if (scene.getLiquidInfo().drag_by_future_solid) {
-      const Sorter& buckets = scene.getParticleBuckets();
-
-      buckets.for_each_bucket([&](int bucket_idx) {
-        const int num_nodes = scene.getNumNodes(bucket_idx);
-
-        for (int i = 0; i < num_nodes; ++i) {
-          m_node_v_fluid_plus_x[bucket_idx][i] *=
-              node_mass_fluid_x[bucket_idx][i] *
-              m_node_inv_mfhdvm_x[bucket_idx][i];
-          m_node_v_fluid_plus_y[bucket_idx][i] *=
-              node_mass_fluid_y[bucket_idx][i] *
-              m_node_inv_mfhdvm_y[bucket_idx][i];
-          m_node_v_fluid_plus_z[bucket_idx][i] *=
-              node_mass_fluid_z[bucket_idx][i] *
-              m_node_inv_mfhdvm_z[bucket_idx][i];
-        }
-      });
-
-      addSolidDrag(scene, m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z,
-                   m_node_v_fluid_plus_x, m_node_v_fluid_plus_y,
-                   m_node_v_fluid_plus_z);
-
-      pressure::applyPressureGradsFluid(
-          scene, node_pressure, m_node_v_fluid_plus_x, m_node_v_fluid_plus_y,
-          m_node_v_fluid_plus_z, m_node_inv_mfhdvm_x, m_node_inv_mfhdvm_y,
-          m_node_inv_mfhdvm_z, dt);
-    } else {
-      const auto& m_node_u_s_star_x = scene.getNodeVelocityX();
-      const auto& m_node_u_s_star_y = scene.getNodeVelocityY();
-      const auto& m_node_u_s_star_z = scene.getNodeVelocityZ();
-
-      addSolidDragRHS(scene, m_node_u_s_star_x, m_node_u_s_star_y,
-                      m_node_u_s_star_z, m_node_rhs_fluid_x, m_node_rhs_fluid_y,
-                      m_node_rhs_fluid_z);
-
-      pressure::applyPressureGradsFluidRHS(
-          scene, scene.getNodePressure(), m_node_rhs_fluid_x,
-          m_node_rhs_fluid_y, m_node_rhs_fluid_z, m_node_mshdvm_hdvm_x,
-          m_node_mshdvm_hdvm_y, m_node_mshdvm_hdvm_z, dt);
-
-      performInvLocalSolve(scene, m_node_rhs_fluid_x, m_node_rhs_fluid_y,
-                           m_node_rhs_fluid_z, m_node_inv_C_x, m_node_inv_C_y,
-                           m_node_inv_C_z, m_node_v_fluid_plus_x,
-                           m_node_v_fluid_plus_y, m_node_v_fluid_plus_z);
-    }
-
-    pressure::extrapolate(scene, scene.getNodeLiquidValidX(),
-                          m_node_v_fluid_plus_x);
-    pressure::extrapolate(scene, scene.getNodeLiquidValidY(),
-                          m_node_v_fluid_plus_y);
-    pressure::extrapolate(scene, scene.getNodeLiquidValidZ(),
-                          m_node_v_fluid_plus_z);
-  }
-
-  return true;
-}
-
-bool LinearizedImplicitEuler::projectFine(TwoDScene& scene, scalar dt) {
-  if (scene.getNumFluidParticles() == 0) return false;
-
-  allocateCenterNodeVectors(scene, m_fine_global_indices);
-
-  pressure::solveNodePressure(
-      scene, scene.getNodePressure(), m_fine_pressure_rhs,
-      m_fine_pressure_matrix, m_fine_global_indices, m_node_psi_fs_x,
-      m_node_psi_fs_y, m_node_psi_fs_z, m_node_psi_sf_x, m_node_psi_sf_y,
-      m_node_psi_sf_z, m_node_v_fluid_plus_x, m_node_v_fluid_plus_y,
-      m_node_v_fluid_plus_z, m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z,
-      m_node_inv_C_x, m_node_inv_C_y, m_node_inv_C_z, m_node_inv_Cs_x,
-      m_node_inv_Cs_y, m_node_inv_Cs_z, m_node_mfhdvm_hdvm_x,
-      m_node_mfhdvm_hdvm_y, m_node_mfhdvm_hdvm_z, m_node_mshdvm_hdvm_x,
-      m_node_mshdvm_hdvm_y, m_node_mshdvm_hdvm_z, dt, m_pressure_criterion,
-      m_maxiters);
-
-#ifdef CHECK_EQU_24
-  pushFluidVelocity();
-  pushElastoVelocity();
-
-  // apply pressure & check divergence on the Naive Equ.
-  // construct u_s^n+1 according to Equ. 24
-  std::vector<VectorXs> tmp_rhs_x = m_node_rhs_x;
-  std::vector<VectorXs> tmp_rhs_y = m_node_rhs_y;
-  std::vector<VectorXs> tmp_rhs_z = m_node_rhs_z;
-
-  const auto& m_node_u_f_star_x = scene.getNodeFluidVelocityX();
-  const auto& m_node_u_f_star_y = scene.getNodeFluidVelocityY();
-  const auto& m_node_u_f_star_z = scene.getNodeFluidVelocityZ();
-
-  int num_elasto = scene.getNumSoftElastoParticles();
-  // solve elasto
-  if (num_elasto > 0) {
-    if (scene.getLiquidInfo().apply_pressure_solid)
-      pressure::applyPressureGradsElastoRHS(
-          scene, scene.getNodePressure(), tmp_rhs_x, tmp_rhs_y, tmp_rhs_z,
-          m_node_mfhdvm_hdvm_x, m_node_mfhdvm_hdvm_y, m_node_mfhdvm_hdvm_z, dt);
-
-    addFluidDragRHS(scene, m_node_u_f_star_x, m_node_u_f_star_y,
-                    m_node_u_f_star_z, tmp_rhs_x, tmp_rhs_y, tmp_rhs_z);
-
-    performInvLocalSolve(scene, tmp_rhs_x, tmp_rhs_y, tmp_rhs_z,
-                         m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
-                         m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z);
-  }
-
-  // construct u_f^n+1 according to Equ. 24
-  std::vector<VectorXs> tmp_rhs_fluid_x = m_node_rhs_fluid_x;
-  std::vector<VectorXs> tmp_rhs_fluid_y = m_node_rhs_fluid_y;
-  std::vector<VectorXs> tmp_rhs_fluid_z = m_node_rhs_fluid_z;
-
-  const auto& m_node_u_s_star_x = scene.getNodeVelocityX();
-  const auto& m_node_u_s_star_y = scene.getNodeVelocityY();
-  const auto& m_node_u_s_star_z = scene.getNodeVelocityZ();
-
-  int num_fluids = scene.getNumFluidParticles();
-  // solve fluid
-  if (num_fluids > 0) {
-    addSolidDragRHS(scene, m_node_u_s_star_x, m_node_u_s_star_y,
-                    m_node_u_s_star_z, tmp_rhs_fluid_x, tmp_rhs_fluid_y,
-                    tmp_rhs_fluid_z);
-
-    pressure::applyPressureGradsFluidRHS(
-        scene, scene.getNodePressure(), tmp_rhs_fluid_x, tmp_rhs_fluid_y,
-        tmp_rhs_fluid_z, m_node_mshdvm_hdvm_x, m_node_mshdvm_hdvm_y,
-        m_node_mshdvm_hdvm_z, dt);
-
-    performInvLocalSolve(scene, tmp_rhs_fluid_x, tmp_rhs_fluid_y,
-                         tmp_rhs_fluid_z, m_node_inv_C_x, m_node_inv_C_y,
-                         m_node_inv_C_z, m_node_v_fluid_plus_x,
-                         m_node_v_fluid_plus_y, m_node_v_fluid_plus_z);
-
-    pressure::extrapolate(scene, scene.getNodeLiquidValidX(),
-                          scene.getNodeCompressedIndexX(),
-                          m_node_v_fluid_plus_x);
-    pressure::extrapolate(scene, scene.getNodeLiquidValidY(),
-                          scene.getNodeCompressedIndexY(),
-                          m_node_v_fluid_plus_y);
-    pressure::extrapolate(scene, scene.getNodeLiquidValidZ(),
-                          scene.getNodeCompressedIndexZ(),
-                          m_node_v_fluid_plus_z);
-  }
-
-  // check divergence
-  scalar div = computeDivergence(scene);
-
-  std::cout << "CHECK EQU 24: " << div << std::endl;
-
-  popFluidVelocity();
-  popElastoVelocity();
-#endif
-  return true;
 }
 
 std::string LinearizedImplicitEuler::getName() const {

@@ -711,11 +711,9 @@ void TwoDSceneXMLParser::loadParticleSimulation(
   int maxgroup = std::max(mg_part, mg_df);
   scene->resizeGroups(maxgroup + 1);
   scene->sampleSolidDistanceFields();
-  scene->sampleLiquidDistanceFields(0.0);
   scene->updateRestPos();
   scene->initGroupPos();
 
-  loadClothes(node, scene);
   loadHairs(node, scene, dt);
   loadHairPose(node, scene);
   loadScripts(node, scene);
@@ -738,10 +736,6 @@ void TwoDSceneXMLParser::loadParticleSimulation(
   scene->mapParticleNodesAPIC();
   scene->mapParticleSaturationPsiNodes();
   scene->updatePorePressureNodes();
-
-  scene->updateOptiVolume();
-  scene->splitLiquidParticles();
-  scene->mergeLiquidParticles();
 
   scene->saveParticleVelocity();
 
@@ -1403,116 +1397,6 @@ void TwoDSceneXMLParser::loadSimulationType(rapidxml::xml_node<>* node,
   if (node->first_node("simtype"))
     if (node->first_node("simtype")->first_attribute("type"))
       simtype = node->first_node("simtype")->first_attribute("type")->value();
-}
-
-void TwoDSceneXMLParser::loadClothes(
-    rapidxml::xml_node<>* node, const std::shared_ptr<TwoDScene>& twodscene) {
-  assert(node);
-
-  int numclothes = 0;
-  int numfaces = twodscene->getNumFaces();
-  int numparticles = twodscene->getNumParticles();
-
-  for (rapidxml::xml_node<>* nd = node->first_node("cloth"); nd;
-       nd = nd->next_sibling("cloth")) {
-    int paramsIndex = -1;
-    if (nd->first_attribute("params")) {
-      std::string attribute(nd->first_attribute("params")->value());
-      if (!stringutils::extractFromString(attribute, paramsIndex)) {
-        std::cerr << outputmod::startred
-                  << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
-                  << " Failed to parse value of params (ElasticParameters "
-                     "index) for cloth "
-                  << numclothes << ". Value must be integer. Exiting."
-                  << std::endl;
-        exit(1);
-      }
-    } else {
-      std::cerr << outputmod::startred
-                << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
-                << " Failed to parse value of params (ElasticParameters index) "
-                   "for cloth "
-                << numclothes << ". Exiting." << std::endl;
-      exit(1);
-    }
-
-    if (paramsIndex == -1) continue;
-
-    std::vector<Vector3i> faces;
-
-    for (rapidxml::xml_node<>* subnd = nd->first_node("face"); subnd;
-         subnd = subnd->next_sibling("face")) {
-      // Extract the particle's initial velocity
-      Vector3i face = Vector3i::Zero();
-      if (subnd->first_attribute("i")) {
-        std::string face_str(subnd->first_attribute("i")->value());
-        if (!stringutils::readList(face_str, ' ', face)) {
-          std::cerr << "Failed to load x, y, and z face for cloth "
-                    << numclothes << std::endl;
-          exit(1);
-        }
-      } else {
-        continue;
-      }
-
-      faces.push_back(face);
-    }
-
-    std::unordered_set<int> unique_particles;
-
-    const int num_newfaces = faces.size();
-    twodscene->conservativeResizeFaces(numfaces + num_newfaces);
-    for (int i = 0; i < num_newfaces; ++i) {
-      twodscene->setFace(i + numfaces, faces[i]);
-      Vector3s dx0 = twodscene->getPosition(faces[i](1)) -
-                     twodscene->getPosition(faces[i](0));
-      Vector3s dx1 = twodscene->getPosition(faces[i](2)) -
-                     twodscene->getPosition(faces[i](0));
-      twodscene->setFaceRestArea(i + numfaces, (dx0.cross(dx1)).norm() * 0.5);
-      twodscene->setFaceToParameter(i + numfaces, paramsIndex);
-
-      unique_particles.insert(faces[i](0));
-      unique_particles.insert(faces[i](1));
-      unique_particles.insert(faces[i](2));
-    }
-
-    twodscene->insertForce(std::make_shared<ThinShellForce>(
-        twodscene, faces, paramsIndex, numclothes));
-
-    const std::shared_ptr<ElasticParameters>& params =
-        twodscene->getElasticParameters(paramsIndex);
-    for (int pidx : unique_particles) {
-      scalar radius_A = params->getRadiusA(0);
-      scalar radius_B = params->getRadiusB(0);
-
-      if (twodscene->getRadius()(pidx * 2 + 0) == 0.0 ||
-          twodscene->getRadius()(pidx * 2 + 1) == 0.0)
-        twodscene->setRadius(pidx, radius_A, radius_B);
-
-      const scalar original_vol = twodscene->getVol()(pidx);
-      scalar vol = twodscene->getParticleRestArea(pidx) * (radius_A + radius_B);
-      twodscene->setVolume(pidx, original_vol + vol);
-      const scalar original_mass = twodscene->getM()(pidx * 4);
-      scalar mass = params->m_density * vol * params->m_restVolumeFraction;
-      const scalar original_inertia = twodscene->getM()(pidx * 4 + 3);
-      twodscene->setMass(pidx, original_mass + mass, original_inertia);
-
-      if (!twodscene->getLiquidInfo().init_nonuniform_fraction)
-        twodscene->setVolumeFraction(pidx, params->m_restVolumeFraction);
-    }
-
-    ++numclothes;
-    numfaces += num_newfaces;
-
-    VectorXi solve_group(unique_particles.size());
-
-    int i = 0;
-    for (int pidx : unique_particles) solve_group(i++) = pidx;
-
-    twodscene->insertSolveGroup(solve_group);
-
-    // leave radius empty since we don't need it for thin-shell model
-  }
 }
 
 void TwoDSceneXMLParser::loadHairPose(

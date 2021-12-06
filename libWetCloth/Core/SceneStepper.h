@@ -26,12 +26,6 @@ class SceneStepper {
 
   virtual bool stepVelocityLagrangian(TwoDScene& scene, scalar dt) = 0;
 
-  virtual bool projectFine(TwoDScene& scene, scalar dt) = 0;
-
-  virtual bool applyPressureDragElasto(TwoDScene& scene, scalar dt) = 0;
-
-  virtual bool applyPressureDragFluid(TwoDScene& scene, scalar dt) = 0;
-
   virtual bool acceptVelocity(TwoDScene& scene) = 0;
 
   virtual bool manifoldPropagate(TwoDScene& scene, scalar dt) = 0;
@@ -41,8 +35,6 @@ class SceneStepper {
   virtual bool stepImplicitElasto(TwoDScene& scene, scalar dt) = 0;
 
   virtual bool stepImplicitElastoLagrangian(TwoDScene& scene, scalar dt) = 0;
-
-  virtual scalar computeDivergence(TwoDScene& scene) = 0;
 
   virtual void pushFluidVelocity() = 0;
 

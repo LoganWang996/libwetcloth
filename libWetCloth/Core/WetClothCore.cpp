@@ -89,27 +89,9 @@ void WetClothCore::stepSystem(const scalar& dt) {
     m_scene->stepScript(sub_dt, cur_time);
     m_scene->applyScript(sub_dt);
 
-    // Emit Liquid Particles for Liquid Sources
-    m_scene->sampleLiquidDistanceFields(cur_time + sub_dt);
-
     // Remove Liquid Particles outside Simulation Domain (to save time)
     std::cout << "[terminate particles]" << std::endl;
     m_scene->terminateParticles();
-
-    // Calculate the Optimal Volume of Liquid Particles
-    std::cout << "[update optimal volume]" << std::endl;
-    m_scene->updateOptiVolume();
-
-    // Split the Liquid Particles if They are too Large
-    std::cout << "[split particles]" << std::endl;
-    m_scene->splitLiquidParticles();
-
-    // Merge the Liquid Particles if They are too Small
-    std::cout << "[merge particles]" << std::endl;
-    m_scene->mergeLiquidParticles();
-    t1 = timingutils::seconds();
-    timing_buffer[0] += t1 - t0;  // Merge & Split Particles
-    t0 = t1;
 
     // Create Grid around Particles
     m_scene->updateParticleBoundingBox();
@@ -181,68 +163,33 @@ void WetClothCore::stepSystem(const scalar& dt) {
     timing_buffer[4] += t1 - t0;  // Velocity Prediction
     t0 = t1;
 
-    // Check Divergence if Necessary
-    if (m_scene->getLiquidInfo().check_divergence) {
-      m_info.m_initial_div_accu +=
-          m_scene_stepper->computeDivergence(*m_scene) / (scalar)num_substeps;
-    }
+    // Check Divergence if Necessary (removed)
 
-    // Do Pressure Projection for the Mixture
-    m_scene_stepper->projectFine(*m_scene, sub_dt);
-    t1 = timingutils::seconds();
-    timing_buffer[5] += t1 - t0;  // Pressure Projection
-    t0 = t1;
+    // Do Pressure Projection for the Mixture (removed)
 
-    if (m_scene->getLiquidInfo().solve_solid) {
-      // Apply Pressure Gradient to Solid
-      m_scene_stepper->applyPressureDragElasto(*m_scene, sub_dt);
-      t1 = timingutils::seconds();
-      timing_buffer[6] += t1 - t0;  // Timing the Pressure Gradient Application
-      t0 = t1;
-    }
+    // Apply Pressure Gradient to Solid (removed)
 
     // Check Divergence if Necessary and Comparing with the Previously
-    // Recorded Divergence to Measure the Error
-    if (m_scene->getLiquidInfo().check_divergence) {
-      m_scene_stepper->pushFluidVelocity();
-      m_scene_stepper->applyPressureDragFluid(*m_scene, sub_dt);
-      scalar div =
-          m_scene_stepper->computeDivergence(*m_scene) / (scalar)num_substeps;
-      m_info.m_explicit_div_accu += div;
-      m_scene_stepper->popFluidVelocity();
-    }
+    // Recorded Divergence to Measure the Error (removed)
 
     if (m_scene->getLiquidInfo().solve_solid) {
-      // Implicitly Integrate the Elastic Objects
-      m_scene_stepper->stepImplicitElasto(*m_scene, sub_dt);
-      t1 = timingutils::seconds();
-      timing_buffer[6] += t1 - t0;  // Solve solid velocity
-      t0 = t1;
+        // Implicitly Integrate the Elastic Objects
+        m_scene_stepper->stepImplicitElasto(*m_scene, sub_dt);
+        t1 = timingutils::seconds();
+        timing_buffer[6] += t1 - t0;  // Solve solid velocity
+        t0 = t1;
     }
 
-    // Apply Pressure Gradient to Liquid
-    m_scene_stepper->applyPressureDragFluid(*m_scene, sub_dt);
-    t1 = timingutils::seconds();
-    timing_buffer[7] += t1 - t0;  // Solve Fluid velocity
-    t0 = t1;
+    // Apply Pressure Gradient to Liquid (removed)
 
     // Update the Current Velocity with the Solved Ones
     m_scene_stepper->acceptVelocity(*m_scene);
 
-    if (m_scene->getLiquidInfo().check_divergence) {
-      m_info.m_implicit_div_accu +=
-          m_scene_stepper->computeDivergence(*m_scene) / (scalar)num_substeps;
-    }
-
     // Kinematic Projection of the Liquid Velocity at the Boundary (as
-    // Fail-safe)
-    m_scene->constrainLiquidVelocity();
+    // Fail-safe) removed
+    
 
-    // Relax the Liquid Particles (see [Ando et al. 2011] for details)
-    m_scene->correctLiquidParticles(sub_dt);
-    t1 = timingutils::seconds();
-    timing_buffer[8] += t1 - t0;  // Particle Correction
-    t0 = t1;
+    // removed
 
     // Transfer Velocity Back to Particles and Elastic Vertices
     m_scene->mapNodeParticlesAPIC();
@@ -270,11 +217,7 @@ void WetClothCore::stepSystem(const scalar& dt) {
     timing_buffer[11] += t1 - t0;  // Liquid Capturing
     t0 = t1;
 
-    // Emit Liquid Particles for Overflowed Elastic Vertices (Dripping)
-    m_scene->distributeElastoFluid();
-    t1 = timingutils::seconds();
-    timing_buffer[12] += t1 - t0;  // Liquid Dripping
-    t0 = t1;
+    // Emit Liquid Particles for Overflowed Elastic Vertices (Dripping) (removed)
 
     // Update the Velocity Displacement
     m_scene->updateVelocityDifference();
@@ -299,19 +242,7 @@ void WetClothCore::stepSystem(const scalar& dt) {
     t0 = t1;
   }
 
-  // Summarize Divergence if Necessary
-  if (m_scene->getLiquidInfo().check_divergence) {
-    scalar avg_explicit_div =
-        m_info.m_explicit_div_accu / (scalar)(m_current_step + 1);
-    scalar avg_implicit_div =
-        m_info.m_implicit_div_accu / (scalar)(m_current_step + 1);
-    scalar avg_initial_div =
-        m_info.m_initial_div_accu / (scalar)(m_current_step + 1);
-    std::cout << "Div Check, " << avg_initial_div << ", " << avg_explicit_div
-              << ", " << avg_implicit_div << ", "
-              << (fabs(avg_implicit_div - avg_explicit_div) / avg_initial_div)
-              << std::endl;
-  }
+  // Summarize Divergence if Necessary (removed)
 
   // Summarize Memory Usage
   size_t cur_usage = memutils::getCurrentRSS();

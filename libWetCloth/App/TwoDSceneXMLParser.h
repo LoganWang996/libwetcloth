@@ -29,7 +29,6 @@
 #include "SimpleGravityForce.h"
 #include "SpringForce.h"
 #include "StringUtilities.h"
-#include "ThinShell/ThinShellForce.h"
 #include "TwoDScene.h"
 #include "TwoDSceneRenderer.h"
 #include "TwoDimensionalDisplayController.h"
@@ -80,9 +79,6 @@ class TwoDSceneXMLParser {
 
   void loadHairPose(rapidxml::xml_node<>* node,
                     const std::shared_ptr<TwoDScene>& twodscene);
-
-  void loadClothes(rapidxml::xml_node<>* node,
-                   const std::shared_ptr<TwoDScene>& twodscene);
 
   void loadSpringForces(rapidxml::xml_node<>* node,
                         const std::shared_ptr<TwoDScene>& twodscene);

@@ -925,287 +925,7 @@ void TwoDScene::updateIntersection() {
                           [&](int gidx) { m_ray_tri_gauss[gidx].resize(0); });
     return;
   }
-
-  const int num_elasto = getNumElastoParticles();
-
-  MatrixXs m_x_reshaped(num_elasto, 3);
-
-  threadutils::for_each(0, num_elasto, [&](int pidx) {
-    m_x_reshaped.row(pidx) = m_x.segment<3>(pidx * 4).transpose();
-  });
-
-  // do nearest neighbor searching
-  m_gauss_buckets.for_each_bucket_particles([&](int gidx, int bucket_idx) {
-    if (m_fluid_vol_gauss(gidx) < 1e-20) {
-      m_ray_tri_gauss[gidx].resize(0);
-      return;
-    }
-
-    std::vector<Vector3s> search_dirs;
-
-    if (gidx < num_edges) {
-      // for edges we search in its four related dirs
-      search_dirs.resize(4);
-
-      search_dirs[0] = m_norm_gauss.block<3, 1>(gidx * 3, 1);
-      search_dirs[1] = m_norm_gauss.block<3, 1>(gidx * 3, 2);
-      search_dirs[2] = -m_norm_gauss.block<3, 1>(gidx * 3, 1);
-      search_dirs[3] = -m_norm_gauss.block<3, 1>(gidx * 3, 2);
-    } else if (gidx < num_edges + num_faces) {
-      search_dirs.resize(2);
-
-      search_dirs[0] = m_norm_gauss.block<3, 1>(gidx * 3, 2);
-      search_dirs[1] = -m_norm_gauss.block<3, 1>(gidx * 3, 2);
-    } else {
-      // for surfels we dont' trace from the surfel side.
-      m_ray_tri_gauss[gidx].resize(0);
-      return;
-    }
-
-    const int num_dirs = search_dirs.size();
-
-    m_ray_tri_gauss[gidx].resize(0);
-
-    std::vector<scalar> min_dists(num_dirs,
-                                  std::numeric_limits<scalar>::infinity());
-    std::vector<int> ele_min_dists(num_dirs, -1);
-    std::vector<Vector3s> ele_min_np(
-        num_dirs);  // temp buffer storing the cloeset point and thus we don't
-                    // need to recompute later
-    std::vector<Vector3s> ele_min_bary(
-        num_dirs);  // temp buffer storing the bary of cloeset point and thus we
-                    // don't need to recompute later
-
-    m_gauss_buckets.loop_neighbor_bucket_particles(
-        bucket_idx, [&](int ngidx, int) {
-          if (ngidx == gidx) return false;
-          if (!m_liquid_info.solid_cohesion && ngidx >= num_soft_elasto)
-            return false;
-          if (!m_liquid_info.soft_cohesion && ngidx < num_soft_elasto)
-            return false;
-
-          Vector3s dx =
-              m_x_gauss.segment<3>(ngidx * 4) - m_x_gauss.segment<3>(gidx * 4);
-          scalar ldx = dx.norm();
-          if (ldx < 1e-20) return false;
-
-          dx /= ldx;
-
-          // check other angle if surfel met
-          if (ngidx >= num_soft_elasto) {
-            if (dx.dot(m_surfel_norms[ngidx - num_soft_elasto]) < 0.866)
-              return false;
-          }
-
-          // check angle
-          int angle_sel = -1;
-          for (int r = 0; r < num_dirs; ++r) {
-            if (dx.dot(search_dirs[r]) < 0.866) continue;
-
-            angle_sel = r;
-            break;
-          }
-
-          if (angle_sel == -1) return false;
-
-          scalar dist2 = 1e+20;
-          Vector3s np = Vector3s::Zero();
-          Vector3s bary = Vector3s::Zero();
-
-          // check min dist
-          if (ngidx < num_edges) {
-            Vector2s barye;
-            igl::point_simplex_squared_distance<3>(
-                m_x_gauss.segment<3>(gidx * 4), m_x_reshaped, m_edges, ngidx,
-                dist2, np, barye);
-            bary.segment(0, 2) = barye;
-          } else if (ngidx < (num_edges + num_faces)) {
-            igl::point_simplex_squared_distance<3>(
-                m_x_gauss.segment<3>(gidx * 4), m_x_reshaped, m_faces,
-                ngidx - num_edges, dist2, np, bary);
-          } else {
-            dist2 = ldx * ldx;
-            np = m_x_gauss.segment<3>(ngidx * 4);
-            bary = Vector3s(1, 0, 0);
-          }
-
-          if (dist2 < min_dists[angle_sel]) {
-            min_dists[angle_sel] = dist2;
-            ele_min_dists[angle_sel] = ngidx;
-            ele_min_np[angle_sel] = np;
-            ele_min_bary[angle_sel] = bary;
-          }
-
-          return false;
-        });
-
-    for (int r = 0; r < num_dirs; ++r) {
-      if (ele_min_dists[r] >= 0) {
-        RayTriInfo info0;
-        info0.norm = search_dirs[r];
-        info0.start_geo_id = gidx;
-        info0.volume_frac = 0.0;
-
-        info0.intersect_geo_id = ele_min_dists[r];
-        info0.dist = sqrt(min_dists[r]);
-        info0.uv = Vector2s(ele_min_bary[r](0), ele_min_bary[r](1));
-        info0.end = ele_min_np[r];
-        info0.c0 = info0.c1 = 0.0;
-
-        if (info0.intersect_geo_id < num_edges) {
-          const Vector3s& t =
-              m_norm_gauss.block<3, 1>(info0.intersect_geo_id * 3, 0);
-          info0.weight = info0.norm.cross(t).norm();
-        } else {
-          const Vector3s& nn =
-              m_norm_gauss.block<3, 1>(info0.intersect_geo_id * 3, 2);
-          info0.weight = fabs(info0.norm.dot(nn));
-        }
-
-        m_ray_tri_gauss[gidx].push_back(info0);
-      }
-    }
-  });
-
-  auto interpol_phi = [this](const Vector3s& pos) -> scalar {
-    const scalar dx = getCellSize();
-    const scalar default_phi_val = 3.0 * dx;
-
-    // locate bucket
-    Vector3s dpos = pos - (m_bucket_mincorner + Vector3s::Constant(0.5 * dx));
-    Vector3i bucket_handle =
-        Vector3i(floor(dpos(0) / m_bucket_size), floor(dpos(1) / m_bucket_size),
-                 floor(dpos(2) / m_bucket_size));
-
-    if (!m_gauss_buckets.has_bucket(bucket_handle)) return default_phi_val;
-
-    Vector3s bucket_frac =
-        Vector3s(mathutils::clamp(dpos(0) - bucket_handle(0) * m_bucket_size,
-                                  0.0, m_bucket_size),
-                 mathutils::clamp(dpos(1) - bucket_handle(1) * m_bucket_size,
-                                  0.0, m_bucket_size),
-                 mathutils::clamp(dpos(2) - bucket_handle(2) * m_bucket_size,
-                                  0.0, m_bucket_size));
-
-    Vector3i node_p_handle = Vector3i(
-        mathutils::clamp((int)floor(bucket_frac(0) / dx), 0, m_num_nodes - 1),
-        mathutils::clamp((int)floor(bucket_frac(1) / dx), 0, m_num_nodes - 1),
-        mathutils::clamp((int)floor(bucket_frac(2) / dx), 0, m_num_nodes - 1));
-
-    Vector8s phis;
-    phis.setConstant(default_phi_val);
-
-    for (int k = 0; k < 2; ++k)
-      for (int j = 0; j < 2; ++j)
-        for (int i = 0; i < 2; ++i) {
-          Vector3i ibucket = bucket_handle;
-          Vector3i inode = node_p_handle + Vector3i(i, j, k);
-
-          for (int r = 0; r < 3; ++r) {
-            if (inode(r) < 0) {
-              inode(r) += m_num_nodes;
-              ibucket(r)--;
-            } else if (inode(r) >= m_num_nodes) {
-              inode(r) -= m_num_nodes;
-              ibucket(r)++;
-            }
-          }
-
-          if (!m_gauss_buckets.has_bucket(ibucket)) continue;
-
-          const int bucket_idx = m_gauss_buckets.bucket_index(ibucket);
-          const int node_idx = inode(2) * m_num_nodes * m_num_nodes +
-                               inode(1) * m_num_nodes + inode(0);
-
-          if (!m_bucket_activated[bucket_idx]) {
-            phis(k * 4 + j * 2 + i) = 3.0 * dx;
-          } else {
-            phis(k * 4 + j * 2 + i) = m_node_liquid_phi[bucket_idx][node_idx];
-          }
-        }
-
-    Vector3s node_frac =
-        Vector3s(bucket_frac(0) / dx - (scalar)node_p_handle(0),
-                 bucket_frac(1) / dx - (scalar)node_p_handle(1),
-                 bucket_frac(2) / dx - (scalar)node_p_handle(2));
-
-    return mathutils::trilerp(phis(0), phis(1), phis(2), phis(3), phis(4),
-                              phis(5), phis(6), phis(7), node_frac(0),
-                              node_frac(1), node_frac(2));
-  };
-
-  const scalar dx = getCellSize();
-  const scalar dV = dx * dx * dx;
-  const int num_gauss = num_edges + num_faces;
-
-  threadutils::for_each(0, num_gauss, [&](int gidx) {
-    std::vector<RayTriInfo>& infos = m_ray_tri_gauss[gidx];
-
-    if (infos.size() == 0) return;
-
-    const scalar psi = m_volume_fraction_gauss(gidx);
-    const scalar sat = mathutils::clamp(
-        m_fluid_vol_gauss(gidx) / ((1.0 - psi) * m_vol_gauss(gidx)), 0.0, 1.0);
-    const scalar wet_ct = psi * cos(m_liquid_info.rest_contact_angle) +
-                          (1.0 - psi) * (2.0 * sat - 1.0);
-    const scalar wet_st = sqrt(std::max(0.0, 1.0 - wet_ct * wet_ct));
-    const scalar theta = mathutils::clamp(atan2(wet_st, wet_ct), 0.0, 1.35);
-
-    for (auto& info : infos) {
-      const int num_seg = ceil(info.dist / dx);
-      const int num_steps = std::max(num_seg + 1, 2);
-      const scalar ds = info.dist / (scalar)(num_steps - 1);
-
-      scalar vol_frac =
-          m_fluid_vol_gauss(gidx) / std::max(1e-20, dV - m_vol_gauss(gidx)) +
-          m_fluid_vol_gauss(info.intersect_geo_id) /
-              std::max(1e-20, dV - m_vol_gauss(info.intersect_geo_id));
-      scalar phi = interpol_phi(m_x_gauss.segment<3>(gidx * 4));
-
-      if (phi > 0.0) continue;
-
-      for (int r = 1; r < num_steps; ++r) {
-        scalar phi_next = interpol_phi(m_x_gauss.segment<3>(gidx * 4) +
-                                       info.norm * ds * (scalar)r);
-        vol_frac += mathutils::fraction_inside(phi, phi_next);
-        phi = phi_next;
-      }
-
-      const scalar equi_length =
-          gidx >= num_edges ? sqrt(m_face_rest_area(gidx - num_edges) / M_PI)
-                            : m_edge_rest_length(gidx);
-
-      info.volume_frac = vol_frac / (scalar)(num_steps + 2);
-      info.c0 = 0.0;  // m_liquid_info.surf_tension_coeff * M_PI * sin(theta) *
-                      // (M_PI - 2.0 * theta) / (cos(theta) * cos(theta));
-      info.c1 = equi_length * m_liquid_info.surf_tension_coeff * M_PI *
-                (M_PI - 2.0 * theta) / cos(theta) *
-                m_liquid_info.cohesion_coeff;
-    }
-
-    infos.erase(std::remove_if(infos.begin(), infos.end(),
-                               [](const auto& info) {
-                                 return info.volume_frac < 0.4 ||
-                                        info.volume_frac > 0.6;
-                               }),
-                infos.end());
-  });
-
-  // check inversed
-  threadutils::for_each(0, num_edges + num_faces, [&](int gidx) {
-    std::vector<RayTriInfo>& infos = m_ray_tri_gauss[gidx];
-    for (auto& info : infos) {
-      const std::vector<RayTriInfo>& infos_neigh =
-          m_ray_tri_gauss[info.intersect_geo_id];
-
-      for (auto& info_n : infos_neigh) {
-        if (info_n.intersect_geo_id == gidx) {
-          info.weight *= 0.5;
-          break;
-        }
-      }
-    }
-  });
+  // removed
 }
 
 const std::vector<int> TwoDScene::getParticleGroup() const {
@@ -1547,39 +1267,8 @@ void TwoDScene::computedEdFe() {
         dphidd * m_D_gauss.block<3, 3>(i * 3, 0).transpose();
   });
 
-  // compute forces on clothes and surfels
-  threadutils::for_each(num_edges, num_gauss, [&](int i) {
-    Matrix3s FeD = m_d_gauss.block<3, 3>(i * 3, 0);
-    Matrix3s Q, R;
-
-    mathutils::QRDecompose<scalar, 3>(FeD, Q, R);
-
-    double dgdr13 = 0.0, dgdr23 = 0.0, dhdr33 = 0.0;
-    double mu, la;
-    mu = getMu(i) * getCollisionMultiplier(i);
-    la = getLa(i) * getCollisionMultiplier(i);
-
-    mathutils::dhdr_cloth(mu, la, R(2, 2), &dhdr33);
-    if (dhdr33 != 0.0)
-      mathutils::dgdr_cloth(mu, R(0, 2), R(1, 2), &dgdr13, &dgdr23);
-
-    Matrix3s dphidr;
-    dphidr.setZero();
-
-    dphidr(0, 2) = dgdr13;
-    dphidr(1, 2) = dgdr23;
-    dphidr(2, 2) = dhdr33;
-
-    Matrix3s dphidrRt = dphidr * R.transpose();
-
-    Matrix3s tauK = dphidrRt.triangularView<Eigen::Upper>();
-    Matrix3s tauKt = tauK.transpose();
-    Matrix3s DK = dphidrRt.diagonal().asDiagonal();
-    Matrix3s dphidd = Q * (tauK + tauKt - DK) * R.inverse().transpose();
-
-    m_dFe_gauss.block<3, 3>(i * 3, 0) =
-        dphidd * m_D_gauss.block<3, 3>(i * 3, 0).transpose();
-  });
+  // compute forces on clothes and surfels (removed)
+  
 }
 
 /*!
@@ -1778,7 +1467,7 @@ void TwoDScene::solidProjection(const scalar& dt) {
   const int num_elasto = getNumElastoParticles();
 
   const scalar iD = getInverseDCoeff();
-  // solid projection
+  // solid projection 
   threadutils::for_each(num_elasto, num_parts, [&](int pidx) {
     if (m_particle_to_surfel[pidx] >= 0) return;
 
@@ -2354,130 +2043,6 @@ void TwoDScene::buildNodeParticlePairs() {
       3);
 }
 
-void TwoDScene::updateOptiVolume() { relabelLiquidParticles(); }
-
-/*!
- * split liquid particles if they're too large
- */
-void TwoDScene::splitLiquidParticles() {
-  const int num_fluids = getNumFluidParticles();
-  if (!num_fluids) return;
-
-  std::vector<std::vector<Vector3s> > new_part_pos(num_fluids);
-  std::vector<int> n_additional(num_fluids, 0);
-
-  const scalar rad_fine = mathutils::defaultRadiusMultiplier() * getCellSize() *
-                          m_liquid_info.particle_cell_multiplier;
-  const scalar V_fine = 4.0 / 3.0 * M_PI * rad_fine * rad_fine * rad_fine;
-
-  threadutils::for_each(0, num_fluids, [&](int fidx) {
-    const int pidx = m_fluids[fidx];
-    if (m_classifier[pidx] != PC_L) return;
-
-    const int n_split = std::min((int)ceil(m_fluid_vol(pidx) / V_fine),
-                                 (int)sphere_pattern::max_vector_length);
-    if (n_split <= 1) return;
-
-    const Vector3s center = m_x.segment<3>(pidx * 4);
-    const scalar rad = m_radius(pidx * 2 + 0);
-
-    const scalar new_vol = m_fluid_vol(pidx) / (scalar)n_split;
-    const scalar new_rad = pow(new_vol / M_PI * 0.75, 1.0 / 3.0);
-    const scalar splat_rad = std::max(new_rad, rad - new_rad) * 0.75;
-
-    new_part_pos[fidx].resize(n_split - 1);
-
-    Matrix3s M = Matrix3s::Random();
-    Matrix3s Q, R;
-    mathutils::QRDecompose<scalar, 3>(M, Q, R);
-
-    for (int i = 1; i < n_split; ++i) {
-      new_part_pos[fidx][i - 1] =
-          center + Q * m_sphere_pattern[n_split].segment<3>(i * 3) * splat_rad;
-    }
-
-    n_additional[fidx] = n_split - 1;
-
-    m_x.segment<3>(pidx * 4) =
-        center + m_sphere_pattern[n_split].segment<3>(0) * splat_rad;
-    m_radius(pidx * 2 + 0) = m_radius(pidx * 2 + 1) = new_rad;
-    m_fluid_vol(pidx) = new_vol;
-    m_rest_x.segment<3>(pidx * 4) = m_x.segment<3>(pidx * 4);
-    m_fluid_m.segment<3>(pidx * 4).setConstant(new_vol *
-                                               m_liquid_info.liquid_density);
-    m_fluid_m(pidx * 4 + 3) =
-        new_vol * m_liquid_info.liquid_density * new_rad * new_rad * 0.4;
-    m_particle_rest_length(pidx) = new_rad * 2.0;
-    m_particle_rest_area(pidx) = M_PI * new_rad * new_rad;
-    m_classifier[pidx] = PC_o;
-  });
-
-  std::partial_sum(n_additional.begin(), n_additional.end(),
-                   n_additional.begin());
-
-  const int num_add = n_additional[n_additional.size() - 1];
-
-  if (num_add == 0) return;
-
-  const int old_num_parts = getNumParticles();
-
-  conservativeResizeParticles(old_num_parts + num_add);
-  const int old_num_fluids = getNumFluidParticles();
-
-  m_fluids.resize(old_num_fluids + num_add);
-
-  threadutils::for_each(0, num_fluids, [&](int fidx_parent) {
-    const int pidx_parent = m_fluids[fidx_parent];
-    const int idx_np = ((fidx_parent == 0) ? 0 : n_additional[fidx_parent - 1]);
-    const int pidx_new_parts = idx_np + old_num_parts;
-    const int fidx_new_parts = idx_np + old_num_fluids;
-    const int num_new_parts = new_part_pos[fidx_parent].size();
-
-    for (int i = 0; i < num_new_parts; ++i) {
-      const int pidx = pidx_new_parts + i;
-      m_x.segment<3>(pidx * 4) = new_part_pos[fidx_parent][i];
-      m_x(pidx * 4 + 3) = 0.0;
-      m_rest_x.segment<4>(pidx * 4) = m_x.segment<4>(pidx * 4);
-      m_v.segment<4>(pidx * 4) = m_v.segment<4>(pidx_parent * 4);
-      m_dv.segment<4>(pidx * 4) = m_dv.segment<4>(pidx_parent * 4);
-      m_fluid_v.segment<4>(pidx * 4) = m_fluid_v.segment<4>(pidx_parent * 4);
-      m_fluid_m.segment<4>(pidx * 4) = m_fluid_m.segment<4>(pidx_parent * 4);
-      m_fluid_vol(pidx) = m_fluid_vol(pidx_parent);
-      m_vol(pidx) = m_vol(pidx_parent);
-      m_rest_vol(pidx) = m_rest_vol(pidx_parent);
-      m_radius.segment<2>(pidx * 2) = m_radius.segment<2>(pidx_parent * 2);
-      m_volume_fraction(pidx) = m_volume_fraction(pidx_parent);
-      m_rest_volume_fraction(pidx) = m_rest_volume_fraction(pidx_parent);
-      m_fixed[pidx] = m_fixed[pidx_parent];
-      m_twist[pidx] = m_twist[pidx_parent];
-      m_particle_rest_length(pidx) = m_particle_rest_length(pidx_parent);
-      m_particle_rest_area(pidx) = m_particle_rest_area(pidx_parent);
-      m_particle_group[pidx] = m_particle_group[pidx_parent];
-      m_B.block<3, 3>(pidx * 3, 0).setZero();
-      m_fB.block<3, 3>(pidx * 3, 0).setZero();
-      m_is_strand_tip[pidx] = m_is_strand_tip[pidx_parent];
-      m_div[pidx] = m_div[pidx_parent];
-      m_particle_to_surfel[pidx] = m_particle_to_surfel[pidx_parent];
-      m_inside[pidx] = m_inside[pidx_parent];
-      m_classifier[pidx] = m_classifier[pidx_parent];
-      m_shape_factor(pidx) = 0.0;
-      m_orientation.segment<3>(pidx * 3).setZero();
-
-      const int fidx = fidx_new_parts + i;
-      m_fluids[fidx] = pidx;
-    }
-  });
-
-  m_particle_buckets.sort(getNumParticles(), [&](int pidx, int& i, int& j,
-                                                 int& k) {
-    i = (int)floor((m_x(pidx * 4 + 0) - m_bucket_mincorner(0)) / m_bucket_size);
-    j = (int)floor((m_x(pidx * 4 + 1) - m_bucket_mincorner(1)) / m_bucket_size);
-    k = (int)floor((m_x(pidx * 4 + 2) - m_bucket_mincorner(2)) / m_bucket_size);
-  });
-
-  relabelLiquidParticles();
-}
-
 /*!
  * label particle state according to their size
  */
@@ -2502,174 +2067,6 @@ void TwoDScene::relabelLiquidParticles() {
     else
       m_classifier[pidx] = PC_L;
   });
-}
-
-/*!
- * merge too small particles into large particles
- */
-void TwoDScene::mergeLiquidParticles() {
-  const int num_parts = getNumParticles();
-  const int num_elasto = getNumElastoParticles();
-  std::vector<unsigned char> removed(num_parts, false);
-
-  std::vector<scalar> gathered_vol(num_parts, 0.0);
-  std::vector<Vector3s> gathered_moment(num_parts, Vector3s::Zero());
-
-  const scalar rad_fine = mathutils::defaultRadiusMultiplier() * getCellSize() *
-                          m_liquid_info.particle_cell_multiplier;
-  const scalar V_fine = 4.0 / 3.0 * M_PI * rad_fine * rad_fine * rad_fine;
-
-  const int correction_selector = rand() % m_liquid_info.correction_step;
-
-  m_particle_buckets.for_each_bucket_particles_colored_randomized(
-      [&](int pidx, int bucket_idx) {
-        if (!isFluid(pidx) ||
-            (m_classifier[pidx] != PC_S && m_classifier[pidx] != PC_l))
-          return;
-
-        if (pidx % m_liquid_info.correction_step != correction_selector) return;
-
-        scalar should_rad = rad_fine * 2.0;
-
-        if (m_classifier[pidx] == PC_S) {
-          // try upgrade level
-          const scalar full_vol = m_fluid_vol[pidx] + gathered_vol[pidx];
-          const scalar mrel = full_vol / V_fine;
-
-          if (mrel >= 0.5) {
-            m_classifier[pidx] = PC_s;
-            return;
-          }
-
-          std::vector<int> partners;
-
-          m_particle_buckets.loop_neighbor_bucket_particles(
-              bucket_idx, [&](int npidx, int) {
-                if (!removed[npidx] && pidx != npidx && isFluid(npidx) &&
-                    (m_classifier[npidx] == PC_S ||
-                     m_classifier[npidx] == PC_s ||
-                     m_classifier[npidx] == PC_o)) {
-                  const scalar neigh_vol =
-                      m_fluid_vol(npidx) + gathered_vol[npidx];
-                  if (neigh_vol > V_fine) return false;
-
-                  const scalar dist =
-                      (m_x.segment<3>(pidx * 4) - m_x.segment<3>(npidx * 4))
-                          .norm();
-                  if (dist < should_rad) {
-                    partners.push_back(npidx);
-                  }
-                }
-
-                return false;
-              });
-
-          if (!partners.size()) return;
-
-          const scalar invN = 1.0 / (scalar)partners.size();
-
-          const scalar distrib_vol = full_vol * invN;
-          Vector3s distrib_moment =
-              (m_fluid_v.segment<3>(pidx * 4) * m_fluid_vol[pidx] +
-               gathered_moment[pidx]) *
-              invN;
-
-          for (int npidx : partners) {
-            gathered_vol[npidx] += distrib_vol;
-            gathered_moment[npidx] += distrib_moment;
-          }
-
-          removed[pidx] = true;
-          m_fluid_vol(pidx) = 0.0;
-          gathered_vol[pidx] = 0.0;
-          gathered_moment[pidx].setZero();
-        } else if (m_classifier[pidx] == PC_l) {
-          // try upgrade level
-          const scalar full_vol = m_fluid_vol[pidx] + gathered_vol[pidx];
-          if (full_vol < 1e-20) return;
-
-          const scalar mrel = full_vol / V_fine;
-
-          if (mrel > 2.0) {
-            m_classifier[pidx] = PC_L;
-            return;
-          }
-
-          std::vector<int> partners;
-
-          m_particle_buckets.loop_neighbor_bucket_particles(
-              bucket_idx, [&](int npidx, int) {
-                if (pidx != npidx && isFluid(npidx) && !removed[npidx] &&
-                    m_classifier[npidx] == PC_s) {
-                  const scalar neigh_vol =
-                      m_fluid_vol(npidx) + gathered_vol[npidx];
-                  if (neigh_vol > V_fine) return false;
-
-                  const scalar dist =
-                      (m_x.segment<3>(pidx * 4) - m_x.segment<3>(npidx * 4))
-                          .norm();
-                  if (dist < should_rad) {
-                    partners.push_back(npidx);
-                  }
-                }
-
-                return false;
-              });
-
-          if (!partners.size()) return;
-
-          const scalar invN = 1.0 / (scalar)partners.size();
-
-          const scalar ex_vol = full_vol - V_fine;
-          const scalar distrib_vol = ex_vol * invN;
-          const scalar coeff = distrib_vol / full_vol;
-
-          Vector3s distrib_moment =
-              (m_fluid_v.segment<3>(pidx * 4) * m_fluid_vol[pidx] +
-               gathered_moment[pidx]) *
-              coeff;
-
-          for (int npidx : partners) {
-            gathered_vol[npidx] += distrib_vol;
-            gathered_moment[npidx] += distrib_moment;
-          }
-
-          const scalar scaling = V_fine / full_vol;
-          const scalar rad_scaling = pow(scaling, 1.0 / 3.0);
-          m_fluid_vol[pidx] *= scaling;
-          m_fluid_m.segment<3>(pidx * 4) *= scaling;
-          m_radius.segment<2>(pidx * 2) *= rad_scaling;
-          m_particle_rest_length(pidx) *= rad_scaling;
-          m_particle_rest_area(pidx) *= rad_scaling * rad_scaling;
-          m_classifier[pidx] = PC_o;
-        }
-      },
-      3);
-
-  // gather and update
-  threadutils::for_each(num_elasto, num_parts, [&](int pidx) {
-    if (removed[pidx] || gathered_vol[pidx] == 0.0) return;
-
-    const Vector3s full_moment =
-        m_fluid_v.segment<3>(pidx * 4) * m_fluid_vol[pidx] +
-        gathered_moment[pidx];
-    const scalar full_vol = m_fluid_vol[pidx] + gathered_vol[pidx];
-    const scalar full_rad = pow(full_vol * 0.75 / M_PI, 1.0 / 3.0);
-    const scalar inv_full_vol = 1.0 / full_vol;
-
-    m_fluid_vol[pidx] = full_vol;
-    m_fluid_v.segment<3>(pidx * 4) = full_moment * inv_full_vol;
-    m_fluid_m.segment<3>(pidx * 4).setConstant(full_vol *
-                                               m_liquid_info.liquid_density);
-    m_radius(pidx * 2 + 0) = m_radius(pidx * 2 + 1) = full_rad;
-    m_particle_rest_length(pidx) = full_rad * 2.0;
-    m_particle_rest_area(pidx) = M_PI * full_rad * full_rad;
-  });
-
-  // remove marked fluid particles
-  removeEmptyParticles();
-
-  relabelLiquidParticles();
 }
 
 /*!
@@ -3301,75 +2698,7 @@ void TwoDScene::updateLiquidPhi(scalar dt) {
   });
 
   if (getNumFluidParticles() == 0) return;
-
-  const int num_elasto = getNumElastoParticles();
-
-  m_particle_buckets.for_each_bucket_particles_colored(
-      [&](int pidx, int bucket_idx) {
-        if (pidx < num_elasto) return;
-
-        const auto& indices = m_particle_nodes_p[pidx];
-
-        const Vector3s& pos =
-            m_x.segment<3>(pidx * 4);  // + m_fluid_v.segment<3>(pidx * 4) * dt;
-
-        for (int i = 0; i < indices.rows(); ++i) {
-          if (!m_bucket_activated[indices(i, 0)]) continue;
-
-          VectorXs& phis = m_node_liquid_phi[indices(i, 0)];
-          assert(indices(i, 1) >= 0 && indices(i, 1) < phis.size());
-
-          const Vector3s& np = getNodePosP(indices(i, 0), indices(i, 1));
-
-          const scalar phi = (pos - np).norm() -
-                             std::max(dx * 0.883644, m_radius(pidx * 2 + 0));
-
-          if (phi < phis(indices(i, 1))) {
-            phis(indices(i, 1)) = phi;
-          }
-        }
-      },
-      3);
-
-  auto solid_sel = [](const std::shared_ptr<DistanceField>& dfptr) -> bool {
-    return dfptr->usage == DFU_SOLID;
-  };
-
-  m_particle_buckets.for_each_bucket([&](int bucket_idx) {
-    VectorXs& bucket_liquid_phi = m_node_liquid_phi[bucket_idx];
-
-    const int num_pressure = bucket_liquid_phi.size();
-
-    for (int i = 0; i < num_pressure; ++i) {
-      const Vector3s& np = getNodePosP(bucket_idx, i);
-
-      Vector3s vel;
-      const scalar sphi = computePhiVel(np, vel, solid_sel);
-      if (sphi < 0.0) bucket_liquid_phi(i) = -0.5 * dx;
-    }
-  });
-
-  // update variables for viscosity computation
-  if (m_liquid_info.compute_viscosity) {
-    estimateVolumeFractions(m_node_liquid_c_vf, m_node_pos,
-                            Vector3s(0.5, 0.5, 0.5));
-    estimateVolumeFractions(m_node_liquid_u_vf, m_node_pos,
-                            Vector3s(0.0, 0.5, 0.5));
-    estimateVolumeFractions(m_node_liquid_v_vf, m_node_pos,
-                            Vector3s(0.5, 0.0, 0.5));
-    estimateVolumeFractions(m_node_liquid_w_vf, m_node_pos,
-                            Vector3s(0.5, 0.5, 0.0));
-    estimateVolumeFractions(m_node_liquid_ex_vf, m_node_pos,
-                            Vector3s(0.5, 0.0, 0.0));
-    estimateVolumeFractions(m_node_liquid_ey_vf, m_node_pos,
-                            Vector3s(0.0, 0.5, 0.0));
-    estimateVolumeFractions(m_node_liquid_ez_vf, m_node_pos,
-                            Vector3s(0.0, 0.0, 0.5));
-  }
-
-  if (m_liquid_info.use_surf_tension) {
-    extendLiquidPhi();
-  }
+  // removed
 }
 
 /*!
@@ -5167,45 +4496,7 @@ void TwoDScene::updateGaussSystem(scalar dt) {
         (m_fluid_m.segment<4>(e(0) * 4) + m_fluid_m.segment<4>(e(1) * 4)) * 0.5;
   });
 
-  const int num_faces = m_faces.rows();
-  threadutils::for_each(0, num_faces, [&](int i) {
-    const auto& f = m_faces.row(i);
-
-    const Vector3s& angle_frac = m_face_weights[i];
-
-    m_x_gauss.segment<4>((i + num_edges) * 4) =
-        m_x.segment<4>(f[0] * 4) * angle_frac[0] +
-        m_x.segment<4>(f[1] * 4) * angle_frac[1] +
-        m_x.segment<4>(f[2] * 4) * angle_frac[2];
-    m_v_gauss.segment<4>((i + num_edges) * 4) =
-        m_v.segment<4>(f[0] * 4) * angle_frac[0] +
-        m_v.segment<4>(f[1] * 4) * angle_frac[1] +
-        m_v.segment<4>(f[2] * 4) * angle_frac[2];
-    m_fluid_v_gauss.segment<4>((i + num_edges) * 4) =
-        m_fluid_v.segment<4>(f[0] * 4) * angle_frac[0] +
-        m_fluid_v.segment<4>(f[1] * 4) * angle_frac[1] +
-        m_fluid_v.segment<4>(f[2] * 4) * angle_frac[2];
-    m_fluid_vol_gauss(i + num_edges) = m_fluid_vol(f[0]) * angle_frac[0] +
-                                       m_fluid_vol(f[1]) * angle_frac[1] +
-                                       m_fluid_vol(f[2]) * angle_frac[2];
-    m_fluid_m_gauss.segment<4>((i + num_edges) * 4) =
-        m_fluid_m.segment<4>(f[0] * 4) * angle_frac[0] +
-        m_fluid_m.segment<4>(f[1] * 4) * angle_frac[1] +
-        m_fluid_m.segment<4>(f[2] * 4) * angle_frac[2];
-  });
-
-  const int num_surfels = m_surfels.size();
-  threadutils::for_each(0, num_surfels, [&](int i) {
-    int pidx = m_surfels[i];
-    int gidx = i + num_edges + num_faces;
-
-    m_x_gauss.segment<4>(gidx * 4) = m_x.segment<4>(pidx * 4);
-    m_v_gauss.segment<4>(gidx * 4) = m_v.segment<4>(pidx * 4);
-    m_fluid_v_gauss.segment<4>(gidx * 4) = m_fluid_v.segment<4>(pidx * 4);
-    m_fluid_vol_gauss(gidx) = m_fluid_vol(pidx);
-    m_fluid_m_gauss.segment<4>(gidx * 4) = m_fluid_m.segment<4>(pidx * 4);
-  });
-
+  // removed
   updateDeformationGradient(dt);
 }
 
@@ -5299,39 +4590,7 @@ void TwoDScene::updatePlasticity(scalar dt) {
     m_d_gauss.block<3, 3>(3 * pidx, 0) = dhat;
   });
 
-  // for cloth and surfels
-  const int num_gauss = getNumGausses();
-
-  threadutils::for_each(num_edges, num_gauss, [&](int pidx) {
-    const Matrix3s& d_hat = m_d_gauss.block<3, 3>(pidx * 3, 0);
-    Matrix3s Q, R;
-    mathutils::QRDecompose<scalar, 3>(d_hat, Q, R);
-
-    const scalar beta = getFrictionBeta(pidx);
-
-    if (R(2, 2) < 1.0) {
-      const scalar la = getLa(pidx) * getCollisionMultiplier(pidx);
-      const scalar mu = getMu(pidx) * getCollisionMultiplier(pidx);
-
-      const scalar fn = (2.0 * mu + la) * (1.0 - R(2, 2)) * (1.0 - R(2, 2));
-      const scalar ff = mu * sqrt(R(0, 2) * R(0, 2) + R(1, 2) * R(1, 2));
-
-      if (ff > 0.0 && ff > fn * beta) {
-        R(0, 2) *= std::min(1.0, beta * fn / ff);
-        R(1, 2) *= std::min(1.0, beta * fn / ff);
-      }
-    } else {
-      R(0, 2) = 0.0;
-      R(1, 2) = 0.0;
-      R(2, 2) = 1.0;
-    }
-
-    Matrix3s dhat = Q * R;
-
-    m_Fe_gauss.block<3, 3>(3 * pidx, 0) =
-        dhat * m_D_inv_gauss.block<3, 3>(3 * pidx, 0);
-    m_d_gauss.block<3, 3>(3 * pidx, 0) = dhat;
-  });
+  // for cloth and surfels (removed)
 }
 
 Eigen::Quaternion<scalar>& TwoDScene::getGroupRotation(int group_idx) {
@@ -5521,92 +4780,6 @@ void TwoDScene::sampleSolidDistanceFields() {
   }
 }
 
-/*!
- * sample liquid particles from level set sources
- */
-void TwoDScene::sampleLiquidDistanceFields(scalar cur_time) {
-  int num_group = (int)m_group_distance_field.size();
-
-  const scalar dx = getCellSize();  // we use denser dx to prevent penetration
-
-  for (int igroup = 0; igroup < num_group; ++igroup) {
-    Vector3s shooting_vel = Vector3s::Zero();
-
-    if (!m_group_distance_field[igroup]->sampled ||
-        m_group_distance_field[igroup]->usage != DFU_SOURCE ||
-        !m_group_distance_field[igroup]->check_durations(
-            cur_time, m_shooting_vol_accum[igroup], shooting_vel))
-      continue;
-
-    const VectorXs& existing_fluids =
-        m_x.segment(getNumElastoParticles() * 4, getNumFluidParticles() * 4);
-
-    VectorXs additional_pos;
-
-    m_group_distance_field[igroup]->resample_internal(
-        shared_from_this(), dx * m_liquid_info.particle_cell_multiplier,
-        existing_fluids, additional_pos);
-
-    const int df_index = getNumParticles();
-    const int df_size = additional_pos.size() / 3;
-
-    if (df_size == 0) continue;
-
-    const int sp_index = (int)m_fluids.size();
-
-    m_fluids.resize(sp_index + df_size);
-    conservativeResizeParticles(df_index + df_size);
-
-    const scalar rad = mathutils::defaultRadiusMultiplier() * dx *
-                       m_liquid_info.particle_cell_multiplier;
-    const scalar pvol = 4.0 / 3.0 * M_PI * rad * rad * rad;
-
-    m_shooting_vol_accum[igroup] += pvol * (scalar)df_size;
-
-    auto params =
-        m_strandParameters[m_group_distance_field[igroup]->params_index];
-
-    threadutils::for_each(0, df_size, [&](int i) {
-      const int part_idx = df_index + i;
-      m_x.segment<4>(part_idx * 4) =
-          Vector4s(additional_pos(i * 3 + 0), additional_pos(i * 3 + 1),
-                   additional_pos(i * 3 + 2), 0.0);
-      m_rest_x.segment<4>(part_idx * 4) = m_x.segment<4>(part_idx * 4);
-      m_v.segment<4>(part_idx * 4).setZero();
-      m_dv.segment<4>(part_idx * 4).setZero();
-      m_fluid_v.segment<3>(part_idx * 4) = shooting_vel;
-      m_fluid_v(part_idx * 4 + 3) = 0.0;
-      m_m.segment<4>(part_idx * 4).setZero();
-      m_fluid_m.segment<3>(part_idx * 4)
-          .setConstant(pvol * m_liquid_info.liquid_density);
-      m_fluid_m(part_idx * 4 + 3) =
-          m_fluid_m(part_idx * 4 + 0) * rad * rad * 0.4;
-      m_fluid_vol(part_idx) = pvol;
-      m_vol(part_idx) = 0.0;
-      m_rest_vol(part_idx) = 0.0;
-      m_shape_factor(part_idx) = 0.0;
-      m_radius(part_idx * 2 + 0) = m_radius(part_idx * 2 + 1) = rad;
-      m_volume_fraction(part_idx) = 0.0;
-      m_rest_volume_fraction(part_idx) = 0.0;
-      m_fixed[part_idx] = 0U;
-      m_twist[part_idx] = false;
-      m_particle_rest_length(part_idx) = rad * 2.0;
-      m_particle_rest_area(part_idx) = M_PI * rad * rad;
-      m_particle_group[part_idx] = igroup;
-      m_B.block<3, 3>(part_idx * 3, 0).setZero();
-      m_fB.block<3, 3>(part_idx * 3, 0).setZero();
-      m_is_strand_tip[part_idx] = false;
-      m_div[part_idx].resize(0);
-      m_particle_to_surfel[part_idx] = -1;
-      m_inside[part_idx] = 0U;
-      m_classifier[part_idx] = PC_o;
-      m_orientation.segment<3>(part_idx * 3).setZero();
-
-      m_fluids[sp_index + i] = part_idx;
-    });
-  }
-}
-
 const std::vector<int>& TwoDScene::getParticleToSurfels() const {
   return m_particle_to_surfel;
 }
@@ -5696,14 +4869,7 @@ void TwoDScene::updateDeformationGradient(scalar dt) {
     m_Fe_gauss.block<3, 3>(pidx * 3, 0) =
         d_hat * m_D_inv_gauss.block<3, 3>(pidx * 3, 0);
 
-    // update volume & volume fraction
-    if (m_liquid_info.use_varying_fraction) {
-      const scalar J = mathutils::clamp(
-          m_Fe_gauss.block<3, 3>(pidx * 3, 0).determinant(),
-          std::min(4.0 / M_PI * m_rest_volume_fraction_gauss(pidx), 1.0), 2.0);
-      m_vol_gauss(pidx) = m_rest_vol_gauss(pidx) * J;
-      m_volume_fraction_gauss(pidx) = m_rest_volume_fraction_gauss(pidx) / J;
-    }
+    // update volume & volume fraction (removed)
 
     Matrix3s Q, R;
     mathutils::QRDecompose<scalar, 3>(d_hat, Q, R);
@@ -5715,176 +4881,7 @@ void TwoDScene::updateDeformationGradient(scalar dt) {
     //    std::cout << std::endl;
   });
 
-  const int num_faces = m_faces.rows();
-  threadutils::for_each(num_edges, num_edges + num_faces, [&](int pidx) {
-    const int i = pidx - num_edges;
-    const auto& f = m_faces.row(i);
-
-    auto& indices_x = m_gauss_nodes_x[pidx];
-    auto& indices_y = m_gauss_nodes_y[pidx];
-    auto& indices_z = m_gauss_nodes_z[pidx];
-
-    auto& weights = m_gauss_weights[pidx];
-
-    const Vector3s& pos = m_x_gauss.segment<3>(pidx * 4);
-
-    Matrix3s gradx_hat;
-    gradx_hat.setZero();
-
-    for (int i = 0; i < indices_x.rows(); i++) {
-      const int node_bucket_idx = indices_x(i, 0);
-      const int node_idx = indices_x(i, 1);
-      if (!m_bucket_activated[node_bucket_idx]) continue;
-
-      const scalar& nv = m_node_vel_x[node_bucket_idx](node_idx);
-      Vector3s np = getNodePosX(node_bucket_idx, node_idx);
-      gradx_hat.block<1, 3>(0, 0) +=
-          nv * weights(i, 0) * (np - pos).transpose() * invD;
-    }
-
-    for (int i = 0; i < indices_y.rows(); i++) {
-      const int node_bucket_idx = indices_y(i, 0);
-      const int node_idx = indices_y(i, 1);
-      if (!m_bucket_activated[node_bucket_idx]) continue;
-
-      const scalar& nv = m_node_vel_y[node_bucket_idx](node_idx);
-      Vector3s np = getNodePosY(node_bucket_idx, node_idx);
-      gradx_hat.block<1, 3>(1, 0) +=
-          nv * weights(i, 1) * (np - pos).transpose() * invD;
-    }
-
-    for (int i = 0; i < indices_z.rows(); i++) {
-      const int node_bucket_idx = indices_z(i, 0);
-      const int node_idx = indices_z(i, 1);
-      if (!m_bucket_activated[node_bucket_idx]) continue;
-
-      const scalar& nv = m_node_vel_z[node_bucket_idx](node_idx);
-      Vector3s np = getNodePosZ(node_bucket_idx, node_idx);
-      gradx_hat.block<1, 3>(2, 0) +=
-          nv * weights(i, 2) * (np - pos).transpose() * invD;
-    }
-
-    //        std::cout<<"gradx_hat: "<<gradx_hat<<std::endl;
-
-    Matrix3s d_hat;
-
-    Vector3s t0 = (m_x.segment<3>(f[1] * 4) - m_x.segment<3>(f[0] * 4));
-    Vector3s t1 = (m_x.segment<3>(f[2] * 4) - m_x.segment<3>(f[0] * 4));
-
-    d_hat.block<3, 1>(0, 0) = t0;
-    d_hat.block<3, 1>(0, 1) = t1;
-    d_hat.block<3, 1>(0, 2) = (Matrix3s::Identity() + gradx_hat * dt +
-                               0.5 * gradx_hat * gradx_hat * (dt * dt)) *
-                              m_d_gauss.block<3, 1>(pidx * 3, 2);
-
-    m_d_gauss.block<3, 3>(pidx * 3, 0) = d_hat;
-    m_Fe_gauss.block<3, 3>(pidx * 3, 0) =
-        d_hat * m_D_inv_gauss.block<3, 3>(pidx * 3, 0);
-
-    // update volume & volume fraction
-    if (m_liquid_info.use_varying_fraction) {
-      const scalar J = mathutils::clamp(
-          m_Fe_gauss.block<3, 3>(pidx * 3, 0).determinant(),
-          std::min(1.15 * m_rest_volume_fraction_gauss(pidx), 1.0), 2.0);
-      m_vol_gauss(pidx) = m_rest_vol_gauss(pidx) * J;
-      m_volume_fraction_gauss(pidx) = m_rest_volume_fraction_gauss(pidx) / J;
-    }
-
-    Matrix3s Q, R;
-    mathutils::QRDecompose<scalar, 3>(d_hat, Q, R);
-
-    Vector3s norm = t1.cross(t0).normalized();
-    m_norm_gauss.block<3, 1>(i * 3, 0) = t0.normalized();
-    m_norm_gauss.block<3, 1>(i * 3, 1) = t0.cross(norm).normalized();
-    m_norm_gauss.block<3, 1>(i * 3, 2) = norm;
-
-    //    std::cout<<"m_D_inv_gauss: \n"<<m_D_inv_gauss.block<3, 3>(pidx*3
-    //    ,0)<<std::endl; std::cout<<"m_d_gauss: \n"<<m_d_gauss.block<3,
-    //    3>(pidx*3 ,0)<<std::endl; std::cout<<"m_Fe_gauss:
-    //    \n"<<m_Fe_gauss.block<3, 3>(pidx*3 ,0)<<std::endl;
-    //    std::cout<<"gradx_hat: \n" <<gradx_hat<<std::endl;
-    //    std::cout << std::endl;
-  });
-
-  const int num_surfels = m_surfels.size();
-  threadutils::for_each(
-      num_edges + num_faces, num_edges + num_faces + num_surfels,
-      [&](int pidx) {
-        const int s = pidx - num_edges - num_faces;
-        const Vector3s& norm = m_surfel_norms[s];
-        Eigen::Quaternion<scalar> rot0 =
-            Eigen::Quaternion<scalar>::FromTwoVectors(Vector3s::UnitZ(), norm);
-
-        auto& indices_x = m_gauss_nodes_x[pidx];
-        auto& indices_y = m_gauss_nodes_y[pidx];
-        auto& indices_z = m_gauss_nodes_z[pidx];
-
-        auto& weights = m_gauss_weights[pidx];
-
-        const Vector3s& pos = m_x_gauss.segment<3>(pidx * 4);
-
-        Matrix3s gradx_hat;
-        gradx_hat.setZero();
-
-        for (int i = 0; i < indices_x.rows(); i++) {
-          const int node_bucket_idx = indices_x(i, 0);
-          const int node_idx = indices_x(i, 1);
-          if (!m_bucket_activated[node_bucket_idx])
-            continue;  // ignore collision from coarse grid since no elasto will
-                       // be there
-
-          const scalar& nv = m_node_vel_x[node_bucket_idx](node_idx);
-          Vector3s np = getNodePosX(node_bucket_idx, node_idx);
-          gradx_hat.block<1, 3>(0, 0) +=
-              nv * weights(i, 0) * (np - pos).transpose() * invD;
-        }
-
-        for (int i = 0; i < indices_y.rows(); i++) {
-          const int node_bucket_idx = indices_y(i, 0);
-          const int node_idx = indices_y(i, 1);
-          if (!m_bucket_activated[node_bucket_idx]) continue;
-
-          const scalar& nv = m_node_vel_y[node_bucket_idx](node_idx);
-          Vector3s np = getNodePosY(node_bucket_idx, node_idx);
-          gradx_hat.block<1, 3>(1, 0) +=
-              nv * weights(i, 1) * (np - pos).transpose() * invD;
-        }
-
-        for (int i = 0; i < indices_z.rows(); i++) {
-          const int node_bucket_idx = indices_z(i, 0);
-          const int node_idx = indices_z(i, 1);
-          if (!m_bucket_activated[node_bucket_idx]) continue;
-
-          const scalar& nv = m_node_vel_z[node_bucket_idx](node_idx);
-          Vector3s np = getNodePosZ(node_bucket_idx, node_idx);
-          gradx_hat.block<1, 3>(2, 0) +=
-              nv * weights(i, 2) * (np - pos).transpose() * invD;
-        }
-
-        //        std::cout<<"gradx_hat: "<<gradx_hat<<std::endl;
-
-        Matrix3s d_hat;
-
-        d_hat.block<3, 1>(0, 0) = rot0 * Vector3s::UnitX();
-        d_hat.block<3, 1>(0, 1) = rot0 * Vector3s::UnitY();
-        d_hat.block<3, 1>(0, 2) = (Matrix3s::Identity() + gradx_hat * dt +
-                                   0.5 * gradx_hat * gradx_hat * (dt * dt)) *
-                                  m_d_gauss.block<3, 1>(pidx * 3, 2);
-
-        m_d_gauss.block<3, 3>(pidx * 3, 0) = d_hat;
-        m_Fe_gauss.block<3, 3>(pidx * 3, 0) =
-            d_hat * m_D_inv_gauss.block<3, 3>(pidx * 3, 0);
-
-        Matrix3s Q, R;
-        mathutils::QRDecompose<scalar, 3>(d_hat, Q, R);
-
-        m_norm_gauss.block<3, 3>(pidx * 3, 0) = Q;
-      });
-
-  // update particle volume fraction
-  if (m_liquid_info.use_varying_fraction) {
-    updateSolidVolumeFraction();
-  }
+  // removed
 }
 
 /*!
@@ -6296,77 +5293,7 @@ void TwoDScene::distributeFluidElasto(const scalar& dt) {
     m_node_raw_weight_y[bucket_idx].setZero();
     m_node_raw_weight_z[bucket_idx].setZero();
 
-    const auto& bucket_node_particles_x = m_node_particles_x[bucket_idx];
-    const auto& bucket_node_particles_y = m_node_particles_y[bucket_idx];
-    const auto& bucket_node_particles_z = m_node_particles_z[bucket_idx];
-
-    const int num_nodes = getNumNodes(bucket_idx);
-
-    for (int i = 0; i < num_nodes; ++i) {
-      const auto& node_particles_x = bucket_node_particles_x[i];
-
-      scalar vol_fluid = 0.0;
-      scalar raw_weight = 0.0;
-
-      for (auto& pair : node_particles_x) {
-        const int pidx = pair.first;
-        const bool is_fluid = pidx >= num_elasto_parts;
-        auto& weights = m_particle_weights[pidx];
-        const scalar& fvol = m_fluid_vol(pidx);
-
-        if (!is_fluid || m_inside[pidx] != 2U) continue;
-
-        vol_fluid += fvol * weights(pair.second, 0);
-        raw_weight += weights(pair.second, 0);
-      }
-
-      m_node_vol_pure_fluid_x[bucket_idx](i) = vol_fluid;
-      m_node_raw_weight_x[bucket_idx](i) = raw_weight;
-    }
-
-    for (int i = 0; i < num_nodes; ++i) {
-      const auto& node_particles_y = bucket_node_particles_y[i];
-
-      scalar vol_fluid = 0.0;
-      scalar raw_weight = 0.0;
-
-      for (auto& pair : node_particles_y) {
-        const int pidx = pair.first;
-        const bool is_fluid = pidx >= num_elasto_parts;
-        auto& weights = m_particle_weights[pidx];
-        const scalar& fvol = m_fluid_vol(pidx);
-
-        if (!is_fluid || m_inside[pidx] != 2U) continue;
-
-        vol_fluid += fvol * weights(pair.second, 1);
-        raw_weight += weights(pair.second, 1);
-      }
-
-      m_node_vol_pure_fluid_y[bucket_idx](i) = vol_fluid;
-      m_node_raw_weight_y[bucket_idx](i) = raw_weight;
-    }
-
-    for (int i = 0; i < num_nodes; ++i) {
-      const auto& node_particles_z = bucket_node_particles_z[i];
-
-      scalar vol_fluid = 0.0;
-      scalar raw_weight = 0.0;
-
-      for (auto& pair : node_particles_z) {
-        const int pidx = pair.first;
-        const bool is_fluid = pidx >= num_elasto_parts;
-        auto& weights = m_particle_weights[pidx];
-        const scalar& fvol = m_fluid_vol(pidx);
-
-        if (!is_fluid || m_inside[pidx] != 2U) continue;
-
-        vol_fluid += fvol * weights(pair.second, 2);
-        raw_weight += weights(pair.second, 2);
-      }
-
-      m_node_vol_pure_fluid_z[bucket_idx](i) = vol_fluid;
-      m_node_raw_weight_z[bucket_idx](i) = raw_weight;
-    }
+    // removed
   });
 
   // capture fluid from nodes, reducing amount on nodes
@@ -6957,71 +5884,7 @@ void TwoDScene::mapNodeParticlesAPIC() {
 
     bool is_fluid = isFluid(pidx);
 
-    if (is_fluid) {
-      Vector3s fv = Vector3s::Zero();
-
-      for (int i = 0; i < indices_x.rows(); ++i) {
-        const int node_bucket_idx = indices_x(i, 0);
-        if (!m_bucket_activated[node_bucket_idx]) continue;
-
-        const int node_idx = indices_x(i, 1);
-
-        scalar fnv = m_node_vel_fluid_x[node_bucket_idx](node_idx);
-
-        Vector3s np = getNodePosX(node_bucket_idx, node_idx);
-
-        fv(0) += fnv * weights(i, 0);
-
-        m_fB.block<1, 3>(pidx * 3 + 0, 0) +=
-            fnv * weights(i, 0) * (np - pos).transpose() * invD;
-      }
-
-      assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
-
-      for (int i = 0; i < indices_y.rows(); ++i) {
-        const int node_bucket_idx = indices_y(i, 0);
-        if (!m_bucket_activated[node_bucket_idx]) continue;
-
-        const int node_idx = indices_y(i, 1);
-
-        scalar fnv = m_node_vel_fluid_y[node_bucket_idx](node_idx);
-
-        Vector3s np = getNodePosY(node_bucket_idx, node_idx);
-
-        fv(1) += fnv * weights(i, 1);
-
-        m_fB.block<1, 3>(pidx * 3 + 1, 0) +=
-            fnv * weights(i, 1) * (np - pos).transpose() * invD;
-      }
-
-      assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
-      assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
-
-      for (int i = 0; i < indices_z.rows(); ++i) {
-        const int node_bucket_idx = indices_z(i, 0);
-        if (!m_bucket_activated[node_bucket_idx]) continue;
-
-        const int node_idx = indices_z(i, 1);
-
-        scalar fnv = m_node_vel_fluid_z[node_bucket_idx](node_idx);
-
-        Vector3s np = getNodePosZ(node_bucket_idx, node_idx);
-
-        fv(2) += fnv * weights(i, 2);
-
-        m_fB.block<1, 3>(pidx * 3 + 2, 0) +=
-            fnv * weights(i, 2) * (np - pos).transpose() * invD;
-      }
-
-      m_fluid_v.segment<3>(pidx * 4) = fv;
-      m_fluid_v(pidx * 4 + 3) = 0.0;
-      m_fB.block<3, 3>(pidx * 3, 0) *= m_liquid_info.flip_coeff;
-
-      assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
-      assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
-
-    } else {
-      for (int i = 0; i < indices_x.rows(); ++i) {
+    for (int i = 0; i < indices_x.rows(); ++i) {
         const int node_bucket_idx = indices_x(i, 0);
         if (!m_bucket_activated[node_bucket_idx]) continue;
 
@@ -7034,12 +5897,12 @@ void TwoDScene::mapNodeParticlesAPIC() {
 
         m_B.block<1, 3>(pidx * 3 + 0, 0) +=
             nv * weights(i, 0) * (np - pos).transpose() * invD;
-      }
+    }
 
-      assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
-      assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+    assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+    assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
 
-      for (int i = 0; i < indices_y.rows(); ++i) {
+    for (int i = 0; i < indices_y.rows(); ++i) {
         const int node_bucket_idx = indices_y(i, 0);
         if (!m_bucket_activated[node_bucket_idx]) continue;
 
@@ -7052,12 +5915,12 @@ void TwoDScene::mapNodeParticlesAPIC() {
 
         m_B.block<1, 3>(pidx * 3 + 1, 0) +=
             nv * weights(i, 1) * (np - pos).transpose() * invD;
-      }
+    }
 
-      assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
-      assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+    assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+    assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
 
-      for (int i = 0; i < indices_z.rows(); ++i) {
+    for (int i = 0; i < indices_z.rows(); ++i) {
         const int node_bucket_idx = indices_z(i, 0);
         if (!m_bucket_activated[node_bucket_idx]) continue;
 
@@ -7070,22 +5933,21 @@ void TwoDScene::mapNodeParticlesAPIC() {
 
         m_B.block<1, 3>(pidx * 3 + 2, 0) +=
             nv * weights(i, 2) * (np - pos).transpose() * invD;
-      }
-
-      m_v.segment<4>(pidx * 4) *= m_liquid_info.elasto_advect_coeff;
-
-      m_B.block<3, 3>(pidx * 3, 0) =
-          ((m_liquid_info.elasto_flip_coeff +
-            m_liquid_info.elasto_flip_asym_coeff) *
-               m_B.block<3, 3>(pidx * 3, 0) +
-           (m_liquid_info.elasto_flip_coeff -
-            m_liquid_info.elasto_flip_asym_coeff) *
-               m_B.block<3, 3>(pidx * 3, 0).transpose()) *
-          0.5;
-
-      assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
-      assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
     }
+
+    m_v.segment<4>(pidx * 4) *= m_liquid_info.elasto_advect_coeff;
+
+    m_B.block<3, 3>(pidx * 3, 0) =
+        ((m_liquid_info.elasto_flip_coeff +
+            m_liquid_info.elasto_flip_asym_coeff) *
+            m_B.block<3, 3>(pidx * 3, 0) +
+            (m_liquid_info.elasto_flip_coeff -
+                m_liquid_info.elasto_flip_asym_coeff) *
+            m_B.block<3, 3>(pidx * 3, 0).transpose()) *
+        0.5;
+
+    assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+    assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
   });
 }
 
@@ -7226,8 +6088,7 @@ void TwoDScene::updateOrientation() {
   const int num_edges = getNumEdges();
   threadutils::for_each(0, num_elasto, [&](int pidx) {
     if (m_particle_to_surfel[pidx] >= 0) {
-      m_orientation.segment<3>(pidx * 3) =
-          m_surfel_norms[m_particle_to_surfel[pidx]];
+      // removed
     } else {
       Vector3s ori = Vector3s::Zero();
       const std::vector<int>& edges = m_particle_to_edge[pidx];
@@ -7242,9 +6103,7 @@ void TwoDScene::updateOrientation() {
       }
 
       for (auto& p : faces) {
-        const int gidx = p.first + num_edges;
-        ori += m_norm_gauss.block<3, 1>(gidx * 3, 2) * m_vol_gauss(gidx) *
-               p.second;
+        // removed
       }
 
       m_orientation.segment<3>(pidx * 3) = ori.normalized();
@@ -7537,21 +6396,7 @@ void TwoDScene::updateGaussAccel() {
         (m_dv.segment<4>(e(0) * 4) + m_dv.segment<4>(e(1) * 4)) * 0.5;
   });
 
-  threadutils::for_each(0, num_triangles, [&](int i) {
-    const auto& f = m_faces.row(i);
-    const Vector3s& angle_frac = m_face_weights[i];
-
-    m_dv_gauss.segment<4>((i + num_edges) * 4) =
-        m_dv.segment<4>(f[0] * 4) * angle_frac[0] +
-        m_dv.segment<4>(f[1] * 4) * angle_frac[1] +
-        m_dv.segment<4>(f[2] * 4) * angle_frac[2];
-  });
-
-  threadutils::for_each(0, num_surfels, [&](int i) {
-    int pidx = m_surfels[i];
-    int gidx = i + num_edges + num_triangles;
-    m_dv_gauss.segment<4>(gidx * 4) = m_dv.segment<4>(pidx * 4);
-  });
+  // remove
 }
 
 const VectorXs& TwoDScene::getGaussDV() const { return m_dv_gauss; }
@@ -7977,93 +6822,6 @@ void TwoDScene::updateSolidPhi() {
       node_solid_vel_z(i) = vel(2);
     }
   });
-
-  if (m_liquid_info.compute_viscosity) {
-    m_particle_buckets.for_each_bucket([&](int bucket_idx) {
-      if (!m_bucket_activated[bucket_idx]) return;
-
-      VectorXs& node_cell_solid_phi = m_node_cell_solid_phi[bucket_idx];
-
-      const int num_node_p = getNumNodes(bucket_idx);
-
-      for (int i = 0; i < num_node_p; ++i) {
-        node_cell_solid_phi(i) =
-            computePhi(getNodePosP(bucket_idx, i), solid_sel);
-      }
-    });
-
-    m_particle_buckets.for_each_bucket([&](int bucket_idx) {
-      if (!m_bucket_activated[bucket_idx]) return;
-
-      const int num_node = getNumNodes(bucket_idx);
-
-      VectorXuc& node_state_u = m_node_state_u[bucket_idx];
-      VectorXuc& node_state_v = m_node_state_v[bucket_idx];
-      VectorXuc& node_state_w = m_node_state_w[bucket_idx];
-
-      const VectorXi& node_index_pressure_x =
-          m_node_index_pressure_x[bucket_idx];
-      const VectorXi& node_index_pressure_y =
-          m_node_index_pressure_y[bucket_idx];
-      const VectorXi& node_index_pressure_z =
-          m_node_index_pressure_z[bucket_idx];
-
-      node_state_u.setZero();
-      node_state_v.setZero();
-      node_state_w.setZero();
-
-      for (int i = 0; i < num_node; ++i) {
-        const Vector4i& indices = node_index_pressure_x.segment<4>(i * 4);
-        scalar sphi = 0.0;
-
-        if (indices[0] != -1 && indices[1] != -1)
-          sphi += m_node_cell_solid_phi[indices[0]][indices[1]];
-
-        if (indices[2] != -1 && indices[3] != -1)
-          sphi += m_node_cell_solid_phi[indices[2]][indices[3]];
-
-        if (sphi < 0.0) {
-          node_state_u(i) = (unsigned char)NS_SOLID;
-        } else {
-          node_state_u(i) = (unsigned char)NS_FLUID;
-        }
-      }
-
-      for (int i = 0; i < num_node; ++i) {
-        const Vector4i& indices = node_index_pressure_y.segment<4>(i * 4);
-        scalar sphi = 0.0;
-
-        if (indices[0] != -1 && indices[1] != -1)
-          sphi += m_node_cell_solid_phi[indices[0]][indices[1]];
-
-        if (indices[2] != -1 && indices[3] != -1)
-          sphi += m_node_cell_solid_phi[indices[2]][indices[3]];
-
-        if (sphi < 0.0) {
-          node_state_v(i) = (unsigned char)NS_SOLID;
-        } else {
-          node_state_v(i) = (unsigned char)NS_FLUID;
-        }
-      }
-
-      for (int i = 0; i < num_node; ++i) {
-        const Vector4i& indices = node_index_pressure_z.segment<4>(i * 4);
-        scalar sphi = 0.0;
-
-        if (indices[0] != -1 && indices[1] != -1)
-          sphi += m_node_cell_solid_phi[indices[0]][indices[1]];
-
-        if (indices[2] != -1 && indices[3] != -1)
-          sphi += m_node_cell_solid_phi[indices[2]][indices[3]];
-
-        if (sphi < 0.0) {
-          node_state_w(i) = (unsigned char)NS_SOLID;
-        } else {
-          node_state_w(i) = (unsigned char)NS_FLUID;
-        }
-      }
-    });
-  }
 }
 
 bool TwoDScene::isBucketActivated(int bucket_index) const {

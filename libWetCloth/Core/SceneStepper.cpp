@@ -27,11 +27,7 @@ bool SceneStepper::advectScene(TwoDScene& scene, scalar dt) {
   threadutils::for_each(0, num_parts, [&](int pidx) {
     bool is_fluid = pidx >= num_elasto_parts;
 
-    if (is_fluid) {
-      x.segment<3>(pidx * 4) += fv.segment<3>(pidx * 4) * dt;
-    } else {
-      x.segment<4>(pidx * 4) += v.segment<4>(pidx * 4) * dt;
-    }
+    x.segment<4>(pidx * 4) += v.segment<4>(pidx * 4) * dt;
   });
 
   //  std::cout << "v: \n" << v << std::endl;
