@@ -16,11 +16,7 @@
 
 #include <numeric>
 
-#include "Capsule.h"
-#include "Icosphere.h"
 #include "MathUtilities.h"
-#include "RoundCornerBox.h"
-#include "RoundCylinder.h"
 #include "TwoDScene.h"
 #include "Array3.h"
 #include "Array3Utils.h"
@@ -28,116 +24,6 @@
 #include "Sorter.h"
 
 using namespace mathutils;
-
-inline scalar sphere_phi(const Vector3s& position, const Vector3s& centre,
-                         scalar radius) {
-  return ((position - centre).norm() - radius);
-}
-
-inline void sphere_phi_bbx(const Vector3s& centre, scalar radius,
-                           Vector3s& bbx_low, Vector3s& bbx_high) {
-  bbx_low = centre - Vector3s(radius, radius, radius);
-  bbx_high = centre + Vector3s(radius, radius, radius);
-}
-
-inline scalar capsule_phi(const Vector3s& position, const Vector3s& centre,
-                          const scalar& radius, const scalar& halflength) {
-  Vector3s a = centre - Vector3s(halflength, 0, 0);
-  Vector3s pa = position - a;
-  Vector3s ba = Vector3s(2.0 * halflength, 0, 0);
-  scalar h =
-      mathutils::clamp(pa.dot(ba) / (4.0 * halflength * halflength), 0.0, 1.0);
-  return (pa - ba * h).norm() - radius;
-}
-
-inline void capsule_phi_bbx(const Vector3s& centre,
-                            const Eigen::Quaternion<scalar>& rot,
-                            const scalar& radius, const scalar& halflength,
-                            Vector3s& bbx_low, Vector3s& bbx_high) {
-  const Vector3s p0 = rot * Vector3s(-halflength, 0, 0) + centre;
-  const Vector3s p1 = rot * Vector3s(halflength, 0, 0) + centre;
-
-  bbx_low = Vector3s(std::min(p0(0), p1(0)), std::min(p0(1), p1(1)),
-                     std::min(p0(2), p1(2))) -
-            Vector3s(radius, radius, radius);
-  bbx_high = Vector3s(std::max(p0(0), p1(0)), std::max(p0(1), p1(1)),
-                      std::max(p0(2), p1(2))) +
-             Vector3s(radius, radius, radius);
-}
-
-inline scalar box_phi(const Vector3s& position, const Vector3s& centre,
-                      const Vector3s& expand, const scalar& radius) {
-  scalar dx = fabs(position[0] - centre[0]) - expand[0];
-  scalar dy = fabs(position[1] - centre[1]) - expand[1];
-  scalar dz = fabs(position[2] - centre[2]) - expand[2];
-  scalar dax = std::max(dx, 0.0);
-  scalar day = std::max(dy, 0.0);
-  scalar daz = std::max(dz, 0.0);
-  return std::min(std::max(std::max(dx, dy), dz), 0.0) +
-         sqrt(dax * dax + day * day + daz * daz) - radius;
-}
-
-inline void box_phi_bbx(const Vector3s& centre,
-                        const Eigen::Quaternion<scalar>& rot,
-                        const Vector3s& expand, const scalar& radius,
-                        Vector3s& bbx_low, Vector3s& bbx_high) {
-  bbx_low = bbx_high = centre;
-
-  for (int r = 0; r < 2; ++r)
-    for (int s = 0; s < 2; ++s)
-      for (int t = 0; t < 2; ++t) {
-        Vector3s p = rot * Vector3s(r ? expand(0) : -expand(0),
-                                    s ? expand(1) : -expand(1),
-                                    t ? expand(2) : -expand(2)) +
-                     centre;
-        bbx_low =
-            Vector3s(std::min(bbx_low(0), p(0)), std::min(bbx_low(1), p(1)),
-                     std::min(bbx_low(2), p(2)));
-        bbx_high =
-            Vector3s(std::max(bbx_high(0), p(0)), std::max(bbx_high(1), p(1)),
-                     std::max(bbx_high(2), p(2)));
-      }
-
-  bbx_low -= Vector3s(radius, radius, radius);
-  bbx_high += Vector3s(radius, radius, radius);
-}
-
-inline scalar cylinder_phi(const Vector3s& position, const Vector3s& centre,
-                           const scalar& radius_ext, const scalar& radius_cor,
-                           const scalar& h) {
-  Vector3s p = position - centre;
-  Vector2s d = Vector2s(Vector2s(p(0), p(2)).norm() - radius_ext + radius_cor,
-                        fabs(p(1)) - h);
-  return std::min(std::max(d(0), d(1)), 0.0) +
-         Vector2s(std::max(d(0), 0.0), std::max(d(1), 0.0)).norm() - radius_cor;
-}
-
-inline void cylinder_phi_bbx(const Vector3s& centre,
-                             const Eigen::Quaternion<scalar>& rot,
-                             const scalar& radius_ext, const scalar& radius_cor,
-                             const scalar& h, Vector3s& bbx_low,
-                             Vector3s& bbx_high) {
-  Vector3s ptb = rot * Vector3s(0, h + radius_cor, 0) + centre;
-  Vector3s pta = rot * Vector3s(0, -h - radius_cor, 0) + centre;
-  Vector3s a = ptb - pta;
-  scalar da = a.dot(a);
-
-  Vector3s db =
-      (radius_ext + radius_cor) * Vector3s(sqrt(1.0 - a(0) * a(0) / da),
-                                           sqrt(1.0 - a(1) * a(1) / da),
-                                           sqrt(1.0 - a(2) * a(2) / da));
-  bbx_low = Vector3s(std::min(pta(0), ptb(0)), std::min(pta(1), ptb(1)),
-                     std::min(pta(2), ptb(2))) -
-            db;
-  bbx_high = Vector3s(std::max(pta(0), ptb(0)), std::max(pta(1), ptb(1)),
-                      std::max(pta(2), ptb(2))) +
-             db;
-
-  Vector3s expansion = (bbx_high - bbx_low) * 0.5;
-  bbx_low = centre - expansion;
-  bbx_high = centre + expansion;
-}
-
 DistanceField::DistanceField(DISTANCE_FIELD_TYPE type_,
                              DISTANCE_FIELD_USAGE usage_, int group_,
                              int params_index_, bool sampled_)
@@ -490,20 +376,6 @@ DistanceFieldObject::DistanceFieldObject(
   omega.setZero();
 
   switch (type_) {
-    case DFT_BOX:
-      mesh = std::make_shared<RoundCornerBox>(
-          32, Vector3s(parameter(0), parameter(1), parameter(2)), parameter(3));
-      break;
-    case DFT_SPHERE:
-      mesh = std::make_shared<Icosphere>(4, parameter(0));
-      break;
-    case DFT_CAPSULE:
-      mesh = std::make_shared<Capsule>(32, parameter(0), parameter(1));
-      break;
-    case DFT_CYLINDER:
-      mesh = std::make_shared<RoundCylinder>(32, 8, parameter(0), parameter(1),
-                                             parameter(2));
-      break;
     case DFT_FILE:
       mesh = std::make_shared<SolidMesh>(szfn, parameter(0));
       process_file_mesh(szfn_cache);
@@ -604,38 +476,6 @@ scalar DistanceFieldObject::compute_phi(const Vector3s& pos) const {
   Vector3s dx = pos - center;
 
   switch (type) {
-    case DFT_BOX: {
-      Eigen::Quaternion<scalar> p0(0.0, dx(0), dx(1), dx(2));
-      Eigen::Quaternion<scalar> irot = rot.conjugate();
-      Vector3s rotp = (irot * p0 * irot.inverse()).vec() + center;
-      phi = sign * box_phi(rotp, center,
-                           Vector3s(parameter(0), parameter(1), parameter(2)),
-                           parameter(3));
-      break;
-    }
-
-    case DFT_SPHERE: {
-      phi = sign * sphere_phi(pos, center, parameter(0));
-      break;
-    }
-
-    case DFT_CAPSULE: {
-      Eigen::Quaternion<scalar> p0(0.0, dx(0), dx(1), dx(2));
-      Eigen::Quaternion<scalar> irot = rot.conjugate();
-      Vector3s rotp = (irot * p0 * irot.inverse()).vec() + center;
-      phi = sign * capsule_phi(rotp, center, parameter(0), parameter(1));
-      break;
-    }
-
-    case DFT_CYLINDER: {
-      Eigen::Quaternion<scalar> p0(0.0, dx(0), dx(1), dx(2));
-      Eigen::Quaternion<scalar> irot = rot.conjugate();
-      Vector3s rotp = (irot * p0 * irot.inverse()).vec() + center;
-      phi = sign * cylinder_phi(rotp, center, parameter(0), parameter(1),
-                                parameter(2));
-      break;
-    }
-
     case DFT_FILE: {
       Eigen::Quaternion<scalar> p0(0.0, dx(0), dx(1), dx(2));
       Eigen::Quaternion<scalar> irot = rot.conjugate();
@@ -724,22 +564,6 @@ void DistanceFieldObject::advance(const scalar& dt) {
 bool DistanceFieldObject::local_bounding_box(Vector3s& bbx_low,
                                              Vector3s& bbx_high) const {
   switch (type) {
-    case DFT_CAPSULE:
-      capsule_phi_bbx(center, rot, parameter(0), parameter(1), bbx_low,
-                      bbx_high);
-      break;
-    case DFT_CYLINDER:
-      cylinder_phi_bbx(center, rot, parameter(0), parameter(1), parameter(2),
-                       bbx_low, bbx_high);
-      break;
-    case DFT_SPHERE:
-      sphere_phi_bbx(center, parameter(0), bbx_low, bbx_high);
-      break;
-    case DFT_BOX:
-      box_phi_bbx(center, rot,
-                  Vector3s(parameter(0), parameter(1), parameter(2)),
-                  parameter(3), bbx_low, bbx_high);
-      break;
     case DFT_FILE:
       mesh->boundingBox(bbx_low, bbx_high, rot);
       bbx_low += center;

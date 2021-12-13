@@ -92,10 +92,6 @@ class TwoDSceneXMLParser {
 
   void loadSceneTag(rapidxml::xml_node<>* node, std::string& scenetag);
 
-  void loadDistanceFields(rapidxml::xml_node<>* node,
-                          const std::shared_ptr<TwoDScene>& twodscene,
-                          int& maxgroup);
-
   void loadElasticParameters(rapidxml::xml_node<>* node,
                             const std::shared_ptr<TwoDScene>& twodscene,
                             const scalar& dt);
