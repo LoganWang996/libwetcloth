@@ -15,7 +15,6 @@
 #include "AlgebraicMultigrid.h"
 #include "MathUtilities.h"
 #include "ThreadUtils.h"
-#include "Viscosity.h"
 #include "Array3Utils.h"
 #include "Sorter.h"
 
@@ -38,24 +37,6 @@ LinearizedImplicitEuler::LinearizedImplicitEuler(
       m_surf_tension_substeps(surf_tension_substeps) {}
 
 LinearizedImplicitEuler::~LinearizedImplicitEuler() {}
-
-bool LinearizedImplicitEuler::advectSurfTension(TwoDScene& scene, scalar dt) {
-  if (!scene.useSurfTension()) return true;
-
-  const scalar subdt = dt / (scalar)m_surf_tension_substeps;
-
-  for (int i = 0; i < m_surf_tension_substeps; ++i) {
-    scene.updateColorP();
-    scene.renormalizeLiquidPhi();
-    scene.updateCurvatureP();
-    scene.advectCurvatureP(subdt);
-
-    std::cout << "[surface tension advect: " << (i + 1) << " / "
-              << m_surf_tension_substeps << "]" << std::endl;
-  }
-
-  return true;
-}
 
 bool LinearizedImplicitEuler::stepScene(TwoDScene& scene, scalar dt) {
   return true;
@@ -268,41 +249,7 @@ bool LinearizedImplicitEuler::stepVelocity(TwoDScene& scene, scalar dt) {
                       node_mass_fluid_z, m_node_v_fluid_plus_x,
                       m_node_v_fluid_plus_y, m_node_v_fluid_plus_z);
 
-    // apply viscosity
-    if (scene.getLiquidInfo().compute_viscosity) {
-      if (scene.getLiquidInfo().implicit_viscosity) {
-        stepImplicitViscosityDiagonalPCG(
-            scene, m_node_v_fluid_plus_x, m_node_v_fluid_plus_y,
-            m_node_v_fluid_plus_z, m_node_v_fluid_plus_x, m_node_v_fluid_plus_y,
-            m_node_v_fluid_plus_z, dt);
-      } else {
-        const scalar sub_dt = dt / (scalar)m_viscosity_substeps;
-
-        for (int i = 0; i < m_viscosity_substeps; ++i) {
-          m_node_v_tmp_x = m_node_v_fluid_plus_x;
-          m_node_v_tmp_y = m_node_v_fluid_plus_y;
-          m_node_v_tmp_z = m_node_v_fluid_plus_z;
-
-          viscosity::applyNodeViscosityExplicit(
-              scene, m_node_v_tmp_x, m_node_v_tmp_y, m_node_v_tmp_z,
-              m_node_v_fluid_plus_x, m_node_v_fluid_plus_y,
-              m_node_v_fluid_plus_z, sub_dt);
-        }
-      }
-
-      // we need recover RHS fluid from new velocity
-      buckets.for_each_bucket([&](int bucket_idx) {
-        m_node_rhs_fluid_x[bucket_idx] =
-            VectorXs(m_node_v_fluid_plus_x[bucket_idx].array() *
-                     node_mass_fluid_x[bucket_idx].array());
-        m_node_rhs_fluid_y[bucket_idx] =
-            VectorXs(m_node_v_fluid_plus_y[bucket_idx].array() *
-                     node_mass_fluid_y[bucket_idx].array());
-        m_node_rhs_fluid_z[bucket_idx] =
-            VectorXs(m_node_v_fluid_plus_z[bucket_idx].array() *
-                     node_mass_fluid_z[bucket_idx].array());
-      });
-    }
+    // apply viscosity (removed)
   }
 
   allocateNodeVectors(scene, m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z);
@@ -2074,55 +2021,6 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
                 << std::endl;
     }
   }
-  return true;
-}
-
-bool LinearizedImplicitEuler::stepImplicitViscosityDiagonalPCG(
-    const TwoDScene& scene, const std::vector<VectorXs>& node_vel_src_x,
-    const std::vector<VectorXs>& node_vel_src_y,
-    const std::vector<VectorXs>& node_vel_src_z,
-    std::vector<VectorXs>& node_vel_x, std::vector<VectorXs>& node_vel_y,
-    std::vector<VectorXs>& node_vel_z, const scalar& dt) {
-  allocateNodeVectors(scene, m_node_visc_indices_x, m_node_visc_indices_y,
-                      m_node_visc_indices_z);
-
-  int offset_nodes_x;
-  int offset_nodes_y;
-  int offset_nodes_z;
-
-  const scalar sub_dt = dt / (scalar)m_viscosity_substeps;
-
-  for (int i = 0; i < m_viscosity_substeps; ++i) {
-    if (i == 0) {
-      viscosity::constructViscosityMatrixRHS(
-          scene, m_node_visc_indices_x, m_node_visc_indices_y,
-          m_node_visc_indices_z, m_effective_node_indices_x,
-          m_effective_node_indices_y, m_effective_node_indices_z,
-          node_vel_src_x, node_vel_src_y, node_vel_src_z, m_visc_matrix,
-          m_visc_rhs, offset_nodes_x, offset_nodes_y, offset_nodes_z, sub_dt);
-    } else {
-      viscosity::updateViscosityRHS(
-          scene, m_node_visc_indices_x, m_node_visc_indices_y,
-          m_node_visc_indices_z, m_effective_node_indices_x,
-          m_effective_node_indices_y, m_effective_node_indices_z,
-          node_vel_src_x, node_vel_src_y, node_vel_src_z, m_visc_rhs,
-          offset_nodes_x, offset_nodes_y, offset_nodes_z, sub_dt);
-    }
-
-    int iter_out;
-    scalar residual;
-
-    viscosity::applyNodeViscosityImplicit(
-        scene, m_node_visc_indices_x, m_node_visc_indices_y,
-        m_node_visc_indices_z, offset_nodes_x, offset_nodes_y, offset_nodes_z,
-        m_visc_matrix, m_visc_rhs, m_visc_solution, node_vel_x, node_vel_y,
-        node_vel_z, residual, iter_out, m_viscous_criterion, m_maxiters);
-
-    std::cout << "[implicit viscosity sub-step: " << i
-              << ", total iter: " << iter_out << ", res: " << residual << "]"
-              << std::endl;
-  }
-
   return true;
 }
 

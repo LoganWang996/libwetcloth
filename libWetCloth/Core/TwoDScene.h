@@ -60,7 +60,6 @@ struct LiquidInfo {
   int bending_scheme;
   int iteration_print_step;
   int surf_tension_smoothing_step;
-  bool use_surf_tension;
   bool use_cohesion;
   bool solid_cohesion;
   bool soft_cohesion;
@@ -793,10 +792,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   const std::shared_ptr<DistanceField>& getGroupDistanceField(int igroup) const;
 
-  std::vector<std::shared_ptr<DistanceField> >& getDistanceFields();
-
-  const std::vector<std::shared_ptr<DistanceField> >& getDistanceFields() const;
-
   const VectorXuc& getOutsideInfo() const;
 
   void sampleSolidDistanceFields();
@@ -891,8 +886,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   bool isSoft(int pidx) const;
 
   bool isOutsideFluid(int pidx) const;
-
-  bool useSurfTension() const;
 
   void expandFluidNodesMarked(int layers);
 
@@ -1206,7 +1199,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   std::vector<std::shared_ptr<DistanceField> > m_group_distance_field;
 
-  std::vector<std::shared_ptr<DistanceField> > m_distance_fields;
 };
 
 #endif

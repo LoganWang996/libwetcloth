@@ -962,10 +962,6 @@ void TwoDScene::initGaussSystem() {
   m_gauss_nodes_y.resize(num_system);
   m_gauss_nodes_z.resize(num_system);
 
-  if (useSurfTension()) {
-    m_gauss_nodes_p.resize(num_system);
-  }
-
   m_gauss_weights.resize(num_system);
   m_gauss_to_parameters.resize(num_system);
 
@@ -2671,10 +2667,6 @@ void TwoDScene::advectCurvatureP(const scalar& dt) {
 
 const std::vector<VectorXs>& TwoDScene::getNodeSurfTensionP() const {
   return m_node_surf_tension;
-}
-
-bool TwoDScene::useSurfTension() const {
-  return m_liquid_info.use_surf_tension;
 }
 
 /*!
@@ -4424,11 +4416,6 @@ void TwoDScene::resampleNodes() {
   findNodes(m_gauss_buckets, m_x_gauss, m_gauss_nodes_z,
             Vector3s(0.5, 0.5, 0.0), gauss_node_criteria);
 
-  if (useSurfTension()) {
-    findNodes(m_gauss_buckets, m_x_gauss, m_gauss_nodes_p,
-              Vector3s(0.5, 0.5, 0.5), gauss_node_criteria);
-  }
-
   expandFluidNodesMarked(1);
 
   // generate nodes in all activated buckets
@@ -4630,14 +4617,6 @@ void TwoDScene::resizeGroups(int num_group) {
         DFT_UNION, DFU_COUNT, i, 0, true);
   });
 
-  for (auto dfptr : m_distance_fields) {
-    if (!dfptr->parent) {
-      dfptr->parent = m_group_distance_field[dfptr->group];
-      std::dynamic_pointer_cast<DistanceFieldOperator>(
-          m_group_distance_field[dfptr->group])
-          ->children.push_back(dfptr);
-    }
-  }
 
   threadutils::for_each(m_group_distance_field, [&](auto dfptr) {
     dfptr->vote_param_indices();
@@ -4782,15 +4761,6 @@ void TwoDScene::sampleSolidDistanceFields() {
 
 const std::vector<int>& TwoDScene::getParticleToSurfels() const {
   return m_particle_to_surfel;
-}
-
-std::vector<std::shared_ptr<DistanceField> >& TwoDScene::getDistanceFields() {
-  return m_distance_fields;
-}
-
-const std::vector<std::shared_ptr<DistanceField> >&
-TwoDScene::getDistanceFields() const {
-  return m_distance_fields;
 }
 
 const MatrixXs& TwoDScene::getGaussNormal() const { return m_norm_gauss; }

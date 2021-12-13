@@ -276,9 +276,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
                "group='dynamic parameters'");
   }
 
-  TwAddVarRW(bar, "Use surface tension", TW_TYPE_BOOLCPP,
-             &info.use_surf_tension,
-             " help='Use/Not use surface tension force' group='features'");
   TwAddVarRW(bar, "Use cohesion", TW_TYPE_BOOLCPP, &info.use_cohesion,
              " help='Use/Not use cohesion force' group='features'");
   TwAddVarRW(bar, "Levelset cohesion", TW_TYPE_BOOLCPP, &info.solid_cohesion,

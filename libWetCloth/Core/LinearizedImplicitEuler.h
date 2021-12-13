@@ -46,13 +46,6 @@ class LinearizedImplicitEuler : public SceneStepper {
 
   virtual bool stepImplicitElastoDiagonalPCG(TwoDScene& scene, scalar dt);
 
-  virtual bool stepImplicitViscosityDiagonalPCG(
-      const TwoDScene& scene, const std::vector<VectorXs>& node_vel_src_x,
-      const std::vector<VectorXs>& node_vel_src_y,
-      const std::vector<VectorXs>& node_vel_src_z,
-      std::vector<VectorXs>& node_vel_x, std::vector<VectorXs>& node_vel_y,
-      std::vector<VectorXs>& node_vel_z, const scalar& dt);
-
   virtual bool stepImplicitElastoDiagonalPCGCoSolve(TwoDScene& scene,
                                                     scalar dt);
 
@@ -62,8 +55,6 @@ class LinearizedImplicitEuler : public SceneStepper {
   virtual bool stepImplicitElastoAMGPCG(TwoDScene& scene, scalar dt);
 
   virtual bool manifoldPropagate(TwoDScene& scene, scalar dt);
-
-  virtual bool advectSurfTension(TwoDScene& scene, scalar dt);
 
   virtual void pushFluidVelocity();
 
