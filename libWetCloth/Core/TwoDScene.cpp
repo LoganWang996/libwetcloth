@@ -520,7 +520,7 @@ scalar TwoDScene::getGaussDensity(int pidx) const {
 }
 
 scalar TwoDScene::getInitialVolumeFraction(int pidx) const {
-  return m_liquid_info.rest_volume_fraction;
+  return m_sim_info.rest_volume_fraction;
 }
 
 /*!
@@ -2234,7 +2234,7 @@ const std::vector<VectorXs>& TwoDScene::getNodeSolidVelZ() const {
   return m_node_solid_vel_z;
 }
 
-void TwoDScene::setSimInfo(const SimInfo& info) { m_liquid_info = info; }
+void TwoDScene::setSimInfo(const SimInfo& info) { m_sim_info = info; }
 
 const std::vector<VectorXs>& TwoDScene::getNodePorePressureP() const {
   return m_node_pore_pressure_p;
@@ -3368,9 +3368,9 @@ void TwoDScene::initGroupPos() {
   }
 }
 
-SimInfo& TwoDScene::getSimInfo() { return m_liquid_info; }
+SimInfo& TwoDScene::getSimInfo() { return m_sim_info; }
 
-const SimInfo& TwoDScene::getSimInfo() const { return m_liquid_info; }
+const SimInfo& TwoDScene::getSimInfo() const { return m_sim_info; }
 
 const std::vector<int>& TwoDScene::getFluidIndices() const { return m_fluids; }
 
@@ -3628,51 +3628,6 @@ scalar TwoDScene::getCellSize() const {
 
 scalar TwoDScene::getInverseDCoeff() const {
   return mathutils::inverse_D_coeff(getCellSize(), m_kernel_order);
-}
-
-/*!
- * calculate volume fraction of nodes and saturation
- */
-void TwoDScene::mapParticleSaturationPsiNodes() {
-  const int num_buckets = getNumBuckets();
-  m_node_sat_p.resize(num_buckets);
-  m_node_psi_p.resize(num_buckets);
-
-  const scalar dx = getCellSize();
-  const scalar dV = dx * dx * dx;
-
-  m_particle_buckets.for_each_bucket([&](int bucket_idx) {
-    const auto& bucket_node_particles_p = m_node_particles_p[bucket_idx];
-    const int num_nodes_p = getNumNodes(bucket_idx);
-
-    m_node_sat_p[bucket_idx].resize(num_nodes_p);
-    m_node_psi_p[bucket_idx].resize(num_nodes_p);
-
-    for (int i = 0; i < num_nodes_p; ++i) {
-      const auto& node_particles_p = bucket_node_particles_p[i];
-
-      scalar vol_liquid = 0.0;
-      scalar vol_solid = 0.0;
-
-      for (auto& pair : node_particles_p) {
-        const int pidx = pair.first;
-        if (m_particle_to_surfel[pidx] >= 0) continue;
-
-        auto& weights = m_particle_weights_p[pidx];
-
-        vol_liquid += m_fluid_vol(pidx) * weights(pair.second);
-        vol_solid += m_rest_vol(pidx) * weights(pair.second) *
-                     m_rest_volume_fraction[pidx];
-      }
-
-      scalar psi = mathutils::clamp(vol_solid / dV, 0.0, 1.0);
-      scalar sat = mathutils::clamp(
-          vol_liquid / std::max(1e-20, dV - vol_solid), 0.0, 1.0);
-
-      m_node_sat_p[bucket_idx](i) = sat;
-      m_node_psi_p[bucket_idx](i) = psi;
-    }
-  });
 }
 
 void TwoDScene::setVolumeFraction(int particle, const scalar& vol_frac) {
@@ -4151,14 +4106,14 @@ void TwoDScene::mapNodeParticlesAPIC() {
             nv * weights(i, 2) * (np - pos).transpose() * invD;
     }
 
-    m_v.segment<4>(pidx * 4) *= m_liquid_info.elasto_advect_coeff;
+    m_v.segment<4>(pidx * 4) *= m_sim_info.elasto_advect_coeff;
 
     m_B.block<3, 3>(pidx * 3, 0) =
-        ((m_liquid_info.elasto_flip_coeff +
-            m_liquid_info.elasto_flip_asym_coeff) *
+        ((m_sim_info.elasto_flip_coeff +
+            m_sim_info.elasto_flip_asym_coeff) *
             m_B.block<3, 3>(pidx * 3, 0) +
-            (m_liquid_info.elasto_flip_coeff -
-                m_liquid_info.elasto_flip_asym_coeff) *
+            (m_sim_info.elasto_flip_coeff -
+                m_sim_info.elasto_flip_asym_coeff) *
             m_B.block<3, 3>(pidx * 3, 0).transpose()) *
         0.5;
 
@@ -4534,7 +4489,7 @@ scalar TwoDScene::computePotentialEnergy() const {
   scalar U = 0.0;
   for (std::vector<Force*>::size_type i = 0; i < m_forces.size(); ++i)
     m_forces[i]->addEnergyToTotal(m_x, m_v, m_m, m_volume_fraction,
-                                  m_liquid_info.lambda, U);
+                                  m_sim_info.lambda, U);
   return U;
 }
 
@@ -4660,7 +4615,7 @@ void TwoDScene::accumulateManifoldFluidGradU(VectorXs& F) {
   for (std::vector<Force*>::size_type i = 0; i < m_forces.size(); ++i) {
     if (m_forces[i]->flag() & 2)
       m_forces[i]->addGradEToTotal(m_x, m_fluid_v, m_fluid_m, m_volume_fraction,
-                                   m_liquid_info.lambda, F_full);
+                                   m_sim_info.lambda, F_full);
   }
 
   F_full *= -1.0;
@@ -4718,7 +4673,7 @@ void TwoDScene::accumulateGradU(VectorXs& F, const VectorXs& dx,
     for (std::vector<Force*>::size_type i = 0; i < m_forces.size(); ++i) {
       if (m_forces[i]->flag() & 1)
         m_forces[i]->addGradEToTotal(m_x, m_v, combined_mass, m_volume_fraction,
-                                     m_liquid_info.lambda, F);
+                                     m_sim_info.lambda, F);
     }
   else {
     VectorXs ddx = m_x + dx;
@@ -4727,13 +4682,13 @@ void TwoDScene::accumulateGradU(VectorXs& F, const VectorXs& dx,
     for (std::vector<Force*>::size_type i = 0; i < m_forces.size(); ++i) {
       if (m_forces[i]->flag() & 1)
         m_forces[i]->addGradEToTotal(ddx, ddv, m_m, m_volume_fraction,
-                                     m_liquid_info.lambda, F);
+                                     m_sim_info.lambda, F);
     }
   }
 }
 
 bool TwoDScene::useAMGPCGSolid() const {
-  return m_liquid_info.use_amgpcg_solid;
+  return m_sim_info.use_amgpcg_solid;
 }
 
 scalar TwoDScene::totalFluidVolumeSoftElasto() const {
@@ -4778,7 +4733,7 @@ void TwoDScene::accumulateGaussGradU(MatrixXs& F, const VectorXs& dx,
 
     scalar psi_coeff = 1.0;
     if (is_edge || is_cloth) {
-      psi_coeff = pow(m_volume_fraction_gauss[i], m_liquid_info.lambda);
+      psi_coeff = pow(m_volume_fraction_gauss[i], m_sim_info.lambda);
     }
 
     const Vector3s& dFe3 = m_dFe_gauss.block<3, 1>(i * 3, 2);
@@ -4826,13 +4781,13 @@ void TwoDScene::accumulateddUdxdx(TripletXs& A, const scalar& dt, int base_idx,
     threadutils::for_each(0, num_force, [&](int i) {
       if (!m_forces[i]->parallelized())
         m_forces[i]->addHessXToTotal(m_x, m_v, m_m, m_volume_fraction,
-                                     m_liquid_info.lambda, A, offsets[i], dt);
+                                     m_sim_info.lambda, A, offsets[i], dt);
     });
 
     for (int i = 0; i < num_force; ++i) {
       if (m_forces[i]->parallelized())
         m_forces[i]->addHessXToTotal(m_x, m_v, m_m, m_volume_fraction,
-                                     m_liquid_info.lambda, A, offsets[i], dt);
+                                     m_sim_info.lambda, A, offsets[i], dt);
     }
   } else {
     VectorXs idx = m_x + dx;
@@ -4841,13 +4796,13 @@ void TwoDScene::accumulateddUdxdx(TripletXs& A, const scalar& dt, int base_idx,
     threadutils::for_each(0, num_force, [&](int i) {
       if (!m_forces[i]->parallelized())
         m_forces[i]->addHessXToTotal(idx, idv, m_m, m_volume_fraction,
-                                     m_liquid_info.lambda, A, offsets[i], dt);
+                                     m_sim_info.lambda, A, offsets[i], dt);
     });
 
     for (int i = 0; i < num_force; ++i) {
       if (m_forces[i]->parallelized())
         m_forces[i]->addHessXToTotal(idx, idv, m_m, m_volume_fraction,
-                                     m_liquid_info.lambda, A, offsets[i], dt);
+                                     m_sim_info.lambda, A, offsets[i], dt);
     }
   }
 }
@@ -4856,7 +4811,7 @@ void TwoDScene::updateMultipliers(const scalar& dt) {
   const int num_force = m_forces.size();
   for (int i = 0; i < num_force; ++i) {
     m_forces[i]->updateMultipliers(m_x, m_v, m_m, m_volume_fraction,
-                                   m_liquid_info.lambda, dt);
+                                   m_sim_info.lambda, dt);
   }
 }
 
@@ -4883,7 +4838,7 @@ void TwoDScene::accumulateAngularddUdxdx(TripletXs& A, const scalar& dt,
   if (dx.size() == 0)
     for (int i = 0; i < num_force; ++i) {
       m_forces[i]->addAngularHessXToTotal(m_x, m_v, m_m, m_volume_fraction,
-                                          m_liquid_info.lambda, A, offsets[i],
+                                          m_sim_info.lambda, A, offsets[i],
                                           dt);
     }
   else {
@@ -4892,7 +4847,7 @@ void TwoDScene::accumulateAngularddUdxdx(TripletXs& A, const scalar& dt,
 
     for (int i = 0; i < num_force; ++i) {
       m_forces[i]->addAngularHessXToTotal(idx, idv, m_m, m_volume_fraction,
-                                          m_liquid_info.lambda, A, offsets[i],
+                                          m_sim_info.lambda, A, offsets[i],
                                           dt);
     }
   }

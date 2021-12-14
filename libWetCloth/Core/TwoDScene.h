@@ -442,8 +442,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   void mapParticleNodesAPIC();  // particles to nodes mapping
 
-  void mapParticleSaturationPsiNodes();
-
   void mapNodeParticlesAPIC();  // nodes to particles mapping
 
   void resizeParticleSystem(int num_particles);
@@ -1094,7 +1092,7 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   std::vector<MatrixXi> m_gauss_bucket_neighbors;
 
-  SimInfo m_liquid_info;
+  SimInfo m_sim_info;
 
   // Forces. Note that the scene inherits responsibility for deleting forces.
   std::vector<std::shared_ptr<Force> > m_forces;

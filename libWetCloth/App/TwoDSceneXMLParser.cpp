@@ -150,7 +150,6 @@ void TwoDSceneXMLParser::loadParticleSimulation(
   scene->updateSolidWeights();
   scene->updateIntersection();
   scene->mapParticleNodesAPIC();
-  scene->mapParticleSaturationPsiNodes();
 
   scene->saveParticleVelocity();
 

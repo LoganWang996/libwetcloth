@@ -140,9 +140,6 @@ void WetClothCore::stepSystem(const scalar& dt) {
     // Save the Grid Velocity
     m_scene->saveFluidVelocity();
 
-    // Update Saturation and Solid Volume Fraction on Grid
-    m_scene->mapParticleSaturationPsiNodes();
-
     t1 = timingutils::seconds();
     timing_buffer[3] +=
         t1 - t0;  // APIC Mapping & Computing the Fields (all above)
