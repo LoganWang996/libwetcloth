@@ -204,15 +204,9 @@ void ParticleSimulation::initializeOpenGLRenderer() {
   TwAddVarRW(bar, "air density", TW_TYPE_DOUBLE, &info.air_density,
     " min=0.0 max=0.1 step=1e-3 help='Air density  (g/cm^3)' "
     "group='dynamic parameters'");
-  TwAddVarRW(bar, "surface tension", TW_TYPE_DOUBLE, &info.surf_tension_coeff,
-    " min=0.0 max=400.0 step=0.1 help='Surface tension coefficient "
-    "(dyn/cm)' group='dynamic parameters'");
   TwAddVarRW(bar, "liquid viscosity", TW_TYPE_DOUBLE, &info.viscosity,
     " min=0.0 max=100.0 step=0.0001 help='Liquid viscosity "
     "(dyn·s/cm^2)' group='dynamic parameters'");
-  TwAddVarRW(bar, "air viscosity", TW_TYPE_DOUBLE, &info.air_viscosity,
-    " min=0.0 max=100.0 step=0.0001 help='Air viscosity (dyn·s/cm^2)' "
-    "group='dynamic parameters'");
   TwAddVarRW(bar, "contact angle", TW_TYPE_DOUBLE, &info.rest_contact_angle,
     " min=0.0 max=1.8325957146 step=0.0001 help='Liquid-solid contact "
     "angle (rad)' group='dynamic parameters'");

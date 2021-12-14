@@ -821,11 +821,7 @@ void LinearizedImplicitEuler::constructHDV(TwoDScene& scene, const scalar& dt) {
 
     for (int i = 0; i < num_nodes; ++i) {
       scalar sat = node_sat_x[bucket_idx][i];
-      scalar dc = scene.getDragCoeffWithOrientation(
-        node_psi_x[bucket_idx][i], sat,
-        node_vel_fluid_x[bucket_idx][i] - node_vel_x[bucket_idx][i],
-        orient_x[bucket_idx].segment<3>(i * 3), shape_factor_x[bucket_idx][i],
-        0, 0);
+      scalar dc = 0.0;
       scalar V_m = node_vol_x[bucket_idx][i] + node_vol_fluid_x[bucket_idx][i];
       scalar hdV = dt * dc * V_m;
 
@@ -842,11 +838,7 @@ void LinearizedImplicitEuler::constructHDV(TwoDScene& scene, const scalar& dt) {
         (mshdvm > 1e-20) ? (hdV / mshdvm) : 1.0;
 
       sat = node_sat_y[bucket_idx][i];
-      dc = scene.getDragCoeffWithOrientation(
-        node_psi_y[bucket_idx][i], sat,
-        node_vel_fluid_y[bucket_idx][i] - node_vel_y[bucket_idx][i],
-        orient_y[bucket_idx].segment<3>(i * 3), shape_factor_y[bucket_idx][i],
-        1, 0);
+      dc = 0.0;
       V_m = node_vol_y[bucket_idx][i] + node_vol_fluid_y[bucket_idx][i];
       hdV = dt * dc * V_m;
 
@@ -863,11 +855,7 @@ void LinearizedImplicitEuler::constructHDV(TwoDScene& scene, const scalar& dt) {
         (mshdvm > 1e-20) ? (hdV / mshdvm) : 1.0;
 
       sat = node_sat_z[bucket_idx][i];
-      dc = scene.getDragCoeffWithOrientation(
-        node_psi_z[bucket_idx][i], sat,
-        node_vel_fluid_z[bucket_idx][i] - node_vel_z[bucket_idx][i],
-        orient_z[bucket_idx].segment<3>(i * 3), shape_factor_z[bucket_idx][i],
-        2, 0);
+      dc = 0.0;
       V_m = node_vol_z[bucket_idx][i] + node_vol_fluid_z[bucket_idx][i];
       hdV = dt * dc * V_m;
 

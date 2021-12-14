@@ -30,11 +30,8 @@
 std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
   os << "liquid density: " << info.liquid_density << std::endl;
   os << "air density: " << info.air_density << std::endl;
-  os << "surf tension coeff: " << info.surf_tension_coeff << std::endl;
   os << "viscosity: " << info.viscosity << std::endl;
-  os << "air viscosity: " << info.air_viscosity << std::endl;
   os << "rest contact angle: " << info.rest_contact_angle << std::endl;
-  os << "yazdchi power: " << info.yazdchi_power << std::endl;
   os << "fiber diameter: " << info.yarn_diameter << std::endl;
   os << "rest volume fraction: " << info.rest_volume_fraction << std::endl;
   os << "lambda: " << info.lambda << std::endl;
@@ -2834,86 +2831,6 @@ const std::vector<VectorXs>& TwoDScene::getNodePsiZ() const {
 }
 
 std::vector<VectorXs>& TwoDScene::getNodePsiZ() { return m_node_psi_z; }
-
-scalar TwoDScene::getDragCoeffWithOrientation(const scalar& psi,
-                                              const scalar& s, const scalar& dv,
-                                              const Vector3s& orientation,
-                                              const scalar& shape_factor,
-                                              int index, int material) const {
-  return 0.0;
-
-  const scalar ergun_coeff = 0.0;
-
-  const scalar di = m_liquid_info.yarn_diameter;
-  const scalar ka =
-      std::max(1e-20, (-log(psi) - 1.476 + 2.0 * psi - 0.5 * psi * psi) /
-                          (16.0 * psi) * di * di);
-  const scalar kb =
-      std::max(1e-20, (-log(psi) - 1.476 + 2.0 * psi - 1.774 * psi * psi +
-                       4.078 * pow(psi, 3.0)) /
-                          (32.0 * psi) * di * di);
-
-  const scalar mu =
-      (material == 0) ? m_liquid_info.viscosity : m_liquid_info.air_viscosity;
-  const scalar rho = (material == 0) ? m_liquid_info.liquid_density
-                                     : m_liquid_info.air_density;
-
-  const scalar ca = std::min(
-      1e+63, mu / ka + ergun_coeff *
-                           pow(di, m_liquid_info.yazdchi_power - 1.0) *
-                           pow(mu, 1.0 - m_liquid_info.yazdchi_power) /
-                           (pow(1.0 - psi, 1.5) * sqrt(ka)) *
-                           pow(rho * fabs(dv), m_liquid_info.yazdchi_power));
-  const scalar cb = std::min(
-      1e+63, mu / kb + ergun_coeff *
-                           pow(di, m_liquid_info.yazdchi_power - 1.0) *
-                           pow(mu, 1.0 - m_liquid_info.yazdchi_power) /
-                           (pow(1.0 - psi, 1.5) * sqrt(kb)) *
-                           pow(rho * fabs(dv), m_liquid_info.yazdchi_power));
-  const scalar c_xy = ca * (1.0 - shape_factor) + cb * shape_factor;
-  const scalar c_z = ca * shape_factor + cb * (1.0 - shape_factor);
-
-  Vector3s cv = Vector3s(c_xy, c_xy, c_z);
-
-  switch (index) {
-    case 0:
-      return mathutils::get_rotated_drag_x(orientation, cv);
-    case 1:
-      return mathutils::get_rotated_drag_y(orientation, cv);
-    case 2:
-      return mathutils::get_rotated_drag_z(orientation, cv);
-    default:
-      break;
-  }
-
-  return 0.0;
-}
-
-scalar TwoDScene::getPlanarDragCoeff(const scalar& psi, const scalar& s,
-                                     const scalar& dv, int material) const {
-  return 0.0;
-
-  const scalar ergun_coeff = 0.0;
-
-  const scalar di = m_liquid_info.yarn_diameter;
-  const scalar ka = (-log(psi) - 1.476 + 2.0 * psi - 0.5 * psi * psi) /
-                    (16.0 * psi) * di * di;
-
-  const scalar k = std::max(1e-20, ka);
-
-  const scalar mu =
-      (material == 0) ? m_liquid_info.viscosity : m_liquid_info.air_viscosity;
-  const scalar rho = (material == 0) ? m_liquid_info.liquid_density
-                                     : m_liquid_info.air_density;
-
-  const scalar c =
-      mu / k + ergun_coeff * pow(di, m_liquid_info.yazdchi_power - 1.0) *
-                   pow(mu, 1.0 - m_liquid_info.yazdchi_power) /
-                   (pow(1.0 - psi, 1.5) * sqrt(k)) *
-                   pow(rho * fabs(dv), m_liquid_info.yazdchi_power);
-
-  return std::min(1e+63, c);
-}
 
 scalar TwoDScene::getMaxVelocity() const {
   scalar max_vel = 0.0;

@@ -803,15 +803,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   scalar getMaxFluidVelocity() const;
 
-  scalar getPlanarDragCoeff(const scalar& psi, const scalar& sat,
-                            const scalar& dv, int material) const;
-
-  scalar getDragCoeffWithOrientation(const scalar& psi, const scalar& sat,
-                                     const scalar& dv,
-                                     const Vector3s& orientation,
-                                     const scalar& shape_factor, int index,
-                                     int material) const;
-
   const Vector3s& getBucketMinCorner() const;
 
   scalar getBucketLength() const;
