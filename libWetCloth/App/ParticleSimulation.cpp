@@ -191,19 +191,10 @@ void ParticleSimulation::initializeOpenGLRenderer() {
 
   LiquidInfo& info = m_core->getScene()->getLiquidInfo();
 
-  TwAddVarRO(bar, "fiber diameter", TW_TYPE_DOUBLE, &info.yarn_diameter,
-    " help='Yarn (mesh-based) / fiber (yarn-based) diameter (cm)' "
-    "group='static parameters'");
   TwAddVarRO(bar, "rest volume fraction", TW_TYPE_DOUBLE,
     &info.rest_volume_fraction,
     " help='Volume fraction at rest' group='static parameters'");
 
-  TwAddVarRW(bar, "liquid density", TW_TYPE_DOUBLE, &info.liquid_density,
-    " min=0.1 max=10.0 step=0.1 help='Liquid density  (g/cm^3)' "
-    "group='dynamic parameters'");
-  TwAddVarRW(bar, "air density", TW_TYPE_DOUBLE, &info.air_density,
-    " min=0.0 max=0.1 step=1e-3 help='Air density  (g/cm^3)' "
-    "group='dynamic parameters'");
   TwAddVarRW(bar, "drag nonlinearity", TW_TYPE_DOUBLE, &info.yazdchi_power,
     " min=0.0 max=3.0 step=0.1 help='Drag nonlinearity' "
     "group='dynamic parameters'");
@@ -224,10 +215,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
   TwAddVarRW(bar, "Solid advection lossless", TW_TYPE_DOUBLE,
     &info.elasto_advect_coeff,
     " min=0.0 max=1.0 step=0.0001 help='Lossless of solid advection' "
-    "group='dynamic parameters'");
-  TwAddVarRW(bar, "Levelset modulus", TW_TYPE_DOUBLE,
-    &info.levelset_young_modulus,
-    " min=0.0 max=1e8 step=1e4 help='Levelset Youngs modulus (barye)' "
     "group='dynamic parameters'");
   {
     TwEnumVal bendingEV[] = {

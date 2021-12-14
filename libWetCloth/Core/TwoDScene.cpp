@@ -28,18 +28,12 @@
  * Outputting parameters for debugging
  */
 std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
-  os << "liquid density: " << info.liquid_density << std::endl;
-  os << "air density: " << info.air_density << std::endl;
-  os << "fiber diameter: " << info.yarn_diameter << std::endl;
   os << "rest volume fraction: " << info.rest_volume_fraction << std::endl;
   os << "lambda: " << info.lambda << std::endl;
   os << "flip coeff: " << info.flip_coeff << std::endl;
   os << "elasto flip stretching coeff: " << info.elasto_flip_coeff << std::endl;
   os << "elasto flip-asym coeff: " << info.elasto_flip_asym_coeff << std::endl;
   os << "elasto advection coeff: " << info.elasto_advect_coeff << std::endl;
-  os << "particle cell multiplier: " << info.particle_cell_multiplier
-     << std::endl;
-  os << "levelset modulus: " << info.levelset_young_modulus << std::endl;
   os << "solve solid: " << info.solve_solid << std::endl;
   os << "use twist: " << info.use_twist << std::endl;
   os << "use amgpcg solid: " << info.use_amgpcg_solid << std::endl;
@@ -3684,65 +3678,6 @@ void TwoDScene::mapParticleSaturationPsiNodes() {
 
 void TwoDScene::setVolumeFraction(int particle, const scalar& vol_frac) {
   m_volume_fraction[particle] = m_rest_volume_fraction[particle] = vol_frac;
-}
-
-/*!
- * convert fluid on cloth/yarn into particles
- */
-void TwoDScene::distributeElastoFluid() {
-  const int num_elasto_parts = getNumElastoParticles();
-
-  const scalar rel_rad = mathutils::defaultRadiusMultiplier() * getCellSize() *
-                         m_liquid_info.particle_cell_multiplier;
-  const scalar rel_vol = 4.0 / 3.0 * M_PI * rel_rad * rel_rad * rel_rad;
-
-  const int num_buckets = getNumBuckets();
-  std::vector<std::vector<std::pair<Vector3s, Vector3s> > > buffer(num_buckets);
-
-  const int num_edges = getNumEdges();
-  const int num_faces = getNumFaces();
-
-  VectorXs back_vol = m_fluid_vol;
-  scalar old_sum_vol = back_vol.sum();
-
-  m_gauss_buckets.for_each_bucket_particles_colored([&](int gidx,
-                                                        int bucket_idx) {
-    auto& bucket_buffer = buffer[bucket_idx];
-
-    if (gidx < num_edges) {
-      const auto& e = m_edges.row(gidx);
-
-      const scalar& fvol_0 = back_vol(e(0));
-      const scalar maxvol_0 = m_vol(e(0)) * (1.0 - m_volume_fraction(e(0)));
-      const scalar excess_vol_0 = std::max(0.0, fvol_0 - maxvol_0);
-      const scalar w_0 =
-          m_edge_rest_length(gidx) *
-          mathutils::perimeter(m_radius(e(0) * 2 + 0), m_radius(e(0) * 2 + 1)) *
-          0.5 / m_particle_rest_area(e(0));
-
-      const scalar& fvol_1 = back_vol(e(1));
-      const scalar maxvol_1 = m_vol(e(1)) * (1.0 - m_volume_fraction(e(1)));
-      const scalar excess_vol_1 = std::max(0.0, fvol_1 - maxvol_1);
-      const scalar w_1 =
-          m_edge_rest_length(gidx) *
-          mathutils::perimeter(m_radius(e(1) * 2 + 0), m_radius(e(1) * 2 + 1)) *
-          0.5 / m_particle_rest_area(e(1));
-
-      const scalar total_excess_vol = excess_vol_0 * w_0 + excess_vol_1 * w_1;
-
-      if (total_excess_vol < rel_vol) return;
-    }
-  });
-
-  std::vector<int> start_idx(num_buckets);
-
-  int count = 0;
-  for (int i = 0; i < num_buckets; ++i) {
-    start_idx[i] = count;
-    count += (int)buffer[i].size();
-  }
-
-  if (!count) return;
 }
 
 /*!

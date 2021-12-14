@@ -1170,27 +1170,20 @@ void TwoDSceneXMLParser::loadHairs(rapidxml::xml_node<>* node,
 void TwoDSceneXMLParser::loadLiquidInfo(
     rapidxml::xml_node<>* node, const std::shared_ptr<TwoDScene>& twodscene) {
   LiquidInfo info;
-  info.air_density = 1.2041e-3;  // dyn/cm
-  info.liquid_density = 1.0;     // g/cm^3
   info.yazdchi_power = 1.6;
-  info.yarn_diameter = 0.01;
   info.rest_volume_fraction = 0.4;
   info.lambda = 2.0;
   info.flip_coeff = 0.996;
   info.elasto_flip_asym_coeff = 0.996;
   info.elasto_flip_coeff = 0.0;
   info.elasto_advect_coeff = 0.996;
-  info.particle_cell_multiplier = 0.25;
-  info.levelset_young_modulus = 6.6e6;
   info.solve_solid = true; 
   info.use_twist = true;
   info.use_amgpcg_solid = false;
   info.use_pcr = true;
   info.use_lagrangian_mpm = false;
   info.use_cosolve_angular = false;
-  info.levelset_thickness = 0.25;
   info.iteration_print_step = 0;
-  info.elasto_capture_rate = 1.0;
 
   twodscene->setLiquidInfo(info);
 }

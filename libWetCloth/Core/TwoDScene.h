@@ -33,10 +33,7 @@ enum ParticleClassifier { PC_NONE, PC_S, PC_s, PC_o, PC_l, PC_L };
 enum NODE_STATE { NS_NONE, NS_FLUID, NS_SOLID };
 
 struct LiquidInfo {
-  scalar liquid_density;
-  scalar air_density;
   scalar yazdchi_power;
-  scalar yarn_diameter;
   scalar rest_volume_fraction;
   scalar lambda;
   scalar correction_strength;
@@ -44,10 +41,6 @@ struct LiquidInfo {
   scalar elasto_flip_asym_coeff;
   scalar elasto_flip_coeff;
   scalar elasto_advect_coeff;
-  scalar particle_cell_multiplier;
-  scalar levelset_young_modulus;
-  scalar levelset_thickness;
-  scalar elasto_capture_rate;
   int iteration_print_step;
   bool solve_solid;
   bool use_twist;
@@ -446,8 +439,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   const std::vector<VectorXi>& getNodePressureIndexY() const;
 
   const std::vector<VectorXi>& getNodePressureIndexZ() const;
-
-  void distributeElastoFluid();
 
   void swapParticles(int i, int j);
 
