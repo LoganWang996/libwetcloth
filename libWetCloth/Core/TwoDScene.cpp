@@ -30,8 +30,6 @@
 std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
   os << "liquid density: " << info.liquid_density << std::endl;
   os << "air density: " << info.air_density << std::endl;
-  os << "viscosity: " << info.viscosity << std::endl;
-  os << "rest contact angle: " << info.rest_contact_angle << std::endl;
   os << "fiber diameter: " << info.yarn_diameter << std::endl;
   os << "rest volume fraction: " << info.rest_volume_fraction << std::endl;
   os << "lambda: " << info.lambda << std::endl;
@@ -42,7 +40,6 @@ std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
   os << "particle cell multiplier: " << info.particle_cell_multiplier
      << std::endl;
   os << "levelset modulus: " << info.levelset_young_modulus << std::endl;
-  os << "use cohesion: " << info.use_cohesion << std::endl;
   os << "solve solid: " << info.solve_solid << std::endl;
   os << "use levelset force: " << info.use_levelset_force << std::endl;
   os << "use twist: " << info.use_twist << std::endl;
@@ -2460,12 +2457,6 @@ void TwoDScene::preAllocateNodes() {
   m_node_index_solid_phi_x.resize(num_buckets);
   m_node_index_solid_phi_y.resize(num_buckets);
   m_node_index_solid_phi_z.resize(num_buckets);
-
-  if (m_liquid_info.compute_viscosity) {
-    m_node_index_edge_x.resize(num_buckets);
-    m_node_index_edge_y.resize(num_buckets);
-    m_node_index_edge_z.resize(num_buckets);
-  }
 }
 
 /*!
@@ -2690,20 +2681,6 @@ void TwoDScene::generateNodes() {
     bucket_node_idxp_z.setConstant(-1);
     bucket_node_idx_solid_phi_z.resize(count * 8);
     bucket_node_idx_solid_phi_z.setConstant(-1);
-
-    if (m_liquid_info.compute_viscosity) {
-      VectorXi& bucket_node_idx_ex = m_node_index_edge_x[bucket_idx];
-      bucket_node_idx_ex.resize(count * 8);
-      bucket_node_idx_ex.setConstant(-1);
-
-      VectorXi& bucket_node_idx_ey = m_node_index_edge_y[bucket_idx];
-      bucket_node_idx_ey.resize(count * 8);
-      bucket_node_idx_ey.setConstant(-1);
-
-      VectorXi& bucket_node_idx_ez = m_node_index_edge_z[bucket_idx];
-      bucket_node_idx_ez.resize(count * 8);
-      bucket_node_idx_ez.setConstant(-1);
-    }
   });
 }
 
@@ -3596,65 +3573,6 @@ void TwoDScene::postAllocateNodes() {
     if (m_node_liquid_valid_z[bucket_idx].size() != num_nodes)
       m_node_liquid_valid_z[bucket_idx].resize(num_nodes);
   });
-
-  if (m_liquid_info.compute_viscosity) {
-    if ((int)m_node_liquid_c_vf.size() != num_buckets)
-      m_node_liquid_c_vf.resize(num_buckets);
-
-    if ((int)m_node_liquid_u_vf.size() != num_buckets)
-      m_node_liquid_u_vf.resize(num_buckets);
-    if ((int)m_node_liquid_v_vf.size() != num_buckets)
-      m_node_liquid_v_vf.resize(num_buckets);
-    if ((int)m_node_liquid_w_vf.size() != num_buckets)
-      m_node_liquid_w_vf.resize(num_buckets);
-
-    if ((int)m_node_liquid_ex_vf.size() != num_buckets)
-      m_node_liquid_ex_vf.resize(num_buckets);
-    if ((int)m_node_liquid_ey_vf.size() != num_buckets)
-      m_node_liquid_ey_vf.resize(num_buckets);
-    if ((int)m_node_liquid_ez_vf.size() != num_buckets)
-      m_node_liquid_ez_vf.resize(num_buckets);
-
-    if ((int)m_node_cell_solid_phi.size() != num_buckets)
-      m_node_cell_solid_phi.resize(num_buckets);
-    if ((int)m_node_state_u.size() != num_buckets)
-      m_node_state_u.resize(num_buckets);
-    if ((int)m_node_state_v.size() != num_buckets)
-      m_node_state_v.resize(num_buckets);
-    if ((int)m_node_state_w.size() != num_buckets)
-      m_node_state_w.resize(num_buckets);
-
-    m_particle_buckets.for_each_bucket([&](int bucket_idx) {
-      const int num_nodes = getNumNodes(bucket_idx);
-
-      if (m_node_cell_solid_phi[bucket_idx].size() != num_nodes)
-        m_node_cell_solid_phi[bucket_idx].resize(num_nodes);
-
-      if (m_node_liquid_c_vf[bucket_idx].size() != num_nodes)
-        m_node_liquid_c_vf[bucket_idx].resize(num_nodes);
-
-      if (m_node_liquid_u_vf[bucket_idx].size() != num_nodes)
-        m_node_liquid_u_vf[bucket_idx].resize(num_nodes);
-      if (m_node_liquid_v_vf[bucket_idx].size() != num_nodes)
-        m_node_liquid_v_vf[bucket_idx].resize(num_nodes);
-      if (m_node_liquid_w_vf[bucket_idx].size() != num_nodes)
-        m_node_liquid_w_vf[bucket_idx].resize(num_nodes);
-
-      if (m_node_state_u[bucket_idx].size() != num_nodes)
-        m_node_state_u[bucket_idx].resize(num_nodes);
-      if (m_node_state_v[bucket_idx].size() != num_nodes)
-        m_node_state_v[bucket_idx].resize(num_nodes);
-      if (m_node_state_w[bucket_idx].size() != num_nodes)
-        m_node_state_w[bucket_idx].resize(num_nodes);
-
-      if (m_node_liquid_ex_vf[bucket_idx].size() != num_nodes)
-        m_node_liquid_ex_vf[bucket_idx].resize(num_nodes);
-      if (m_node_liquid_ey_vf[bucket_idx].size() != num_nodes)
-        m_node_liquid_ey_vf[bucket_idx].resize(num_nodes);
-      if (m_node_liquid_ez_vf[bucket_idx].size() != num_nodes)
-        m_node_liquid_ez_vf[bucket_idx].resize(num_nodes);
-    });
-  }
 }
 
 const std::vector<VectorXs>& TwoDScene::getNodeOrientationX() const {
@@ -3766,11 +3684,6 @@ void TwoDScene::resampleNodes() {
   connectSolidPhiNodes();
   // connect pressure node to MAC nodes
   connectPressureNodes();
-
-  if (m_liquid_info.compute_viscosity) {
-    // connect edge node to MAC nodes
-    connectEdgeNodes();
-  }
 
   markInsideOut();
 
@@ -4333,85 +4246,6 @@ void TwoDScene::distributeElastoFluid() {
       const scalar total_excess_vol = excess_vol_0 * w_0 + excess_vol_1 * w_1;
 
       if (total_excess_vol < rel_vol) return;
-
-      const int num_release = (int)floor(total_excess_vol / rel_vol);
-
-      const scalar total_rel_vol = num_release * rel_vol;
-
-      for (int i = 0; i < num_release; ++i) {
-        const scalar a0 = mathutils::scalarRand(0.0, 1.0);
-
-        const Vector3s pos = m_x.segment<3>(e(0) * 4) * (1.0 - a0) +
-                             m_x.segment<3>(e(1) * 4) * a0;
-        const Vector3s vel = m_v.segment<3>(e(0) * 4) * (1.0 - a0) +
-                             m_v.segment<3>(e(1) * 4) * a0;
-
-        bucket_buffer.push_back(std::pair<Vector3s, Vector3s>(pos, vel));
-      }
-
-      const scalar rel_prop = total_rel_vol / total_excess_vol;
-      const scalar rel_vol_0 = excess_vol_0 * w_0 * rel_prop;
-      const scalar rel_vol_1 = excess_vol_1 * w_1 * rel_prop;
-
-      m_fluid_vol(e(0)) = std::max(0.0, m_fluid_vol(e(0)) - rel_vol_0);
-      m_fluid_vol(e(1)) = std::max(0.0, m_fluid_vol(e(1)) - rel_vol_1);
-    } else if (gidx < num_edges + num_faces) {
-      const int fidx = gidx - num_edges;
-      const auto& f = m_faces.row(fidx);
-
-      const scalar& fvol_0 = back_vol(f[0]);
-      const scalar maxvol_0 = m_vol(f[0]) * (1.0 - m_volume_fraction(f[0]));
-      const scalar excess_vol_0 = std::max(0.0, fvol_0 - maxvol_0);
-      const scalar w_0 =
-          m_face_rest_area(fidx) / 3.0 / m_particle_rest_area(f[0]);
-
-      const scalar& fvol_1 = back_vol(f[1]);
-      const scalar maxvol_1 = m_vol(f[1]) * (1.0 - m_volume_fraction(f[1]));
-      const scalar excess_vol_1 = std::max(0.0, fvol_1 - maxvol_1);
-      const scalar w_1 =
-          m_face_rest_area(fidx) / 3.0 / m_particle_rest_area(f[1]);
-
-      const scalar& fvol_2 = back_vol(f[2]);
-      const scalar maxvol_2 = m_vol(f[2]) * (1.0 - m_volume_fraction(f[2]));
-      const scalar excess_vol_2 = std::max(0.0, fvol_2 - maxvol_2);
-      const scalar w_2 =
-          m_face_rest_area(fidx) / 3.0 / m_particle_rest_area(f[2]);
-
-      const scalar total_excess_vol =
-          excess_vol_0 * w_0 + excess_vol_1 * w_1 + excess_vol_2 * w_2;
-
-      if (total_excess_vol < rel_vol) return;
-
-      const int num_release = (int)floor(total_excess_vol / rel_vol);
-
-      const scalar total_rel_vol = num_release * rel_vol;
-
-      for (int i = 0; i < num_release; ++i) {
-        const scalar r0 = mathutils::scalarRand(0.0, 1.0);
-        const scalar r1 = mathutils::scalarRand(0.0, 1.0);
-
-        const scalar a0 = 1.0 - sqrt(r0);
-        const scalar a1 = sqrt(r0) * (1.0 - r1);
-        const scalar a2 = sqrt(r0) * r1;
-
-        const Vector3s pos = m_x.segment<3>(f[0] * 4) * a0 +
-                             m_x.segment<3>(f[1] * 4) * a1 +
-                             m_x.segment<3>(f[2] * 4) * a2;
-        const Vector3s vel = m_v.segment<3>(f[0] * 4) * a0 +
-                             m_v.segment<3>(f[1] * 4) * a1 +
-                             m_v.segment<3>(f[2] * 4) * a2;
-
-        bucket_buffer.push_back(std::pair<Vector3s, Vector3s>(pos, vel));
-      }
-
-      const scalar rel_prop = total_rel_vol / total_excess_vol;
-      const scalar rel_vol_0 = excess_vol_0 * w_0 * rel_prop;
-      const scalar rel_vol_1 = excess_vol_1 * w_1 * rel_prop;
-      const scalar rel_vol_2 = excess_vol_2 * w_2 * rel_prop;
-
-      m_fluid_vol(f[0]) = std::max(0.0, m_fluid_vol(f[0]) - rel_vol_0);
-      m_fluid_vol(f[1]) = std::max(0.0, m_fluid_vol(f[1]) - rel_vol_1);
-      m_fluid_vol(f[2]) = std::max(0.0, m_fluid_vol(f[2]) - rel_vol_2);
     }
   });
 
@@ -4424,83 +4258,6 @@ void TwoDScene::distributeElastoFluid() {
   }
 
   if (!count) return;
-
-  threadutils::for_each(0, num_elasto_parts, [&](int pidx) {
-    m_fluid_m.segment<3>(pidx * 4).setConstant(m_fluid_vol(pidx) *
-                                               m_liquid_info.liquid_density);
-  });
-
-  const int num_part = getNumParticles();
-  conservativeResizeParticles(num_part + count);
-
-  const int num_fluid = (int)m_fluids.size();
-  m_fluids.resize(num_fluid + count);
-
-  threadutils::for_each(0, num_buckets, [&](int bucket_idx) {
-    const int num_new_parts = (int)buffer[bucket_idx].size();
-    auto& bucket_buffer = buffer[bucket_idx];
-
-    for (int i = 0; i < num_new_parts; ++i) {
-      const int part_idx = num_part + start_idx[bucket_idx] + i;
-      const int sp_idx = num_fluid + start_idx[bucket_idx] + i;
-
-      m_x.segment<4>(part_idx * 4) =
-          Vector4s(bucket_buffer[i].first(0), bucket_buffer[i].first(1),
-                   bucket_buffer[i].first(2), 0.0);
-      m_rest_x.segment<4>(part_idx * 4) = m_x.segment<4>(part_idx * 4);
-      m_v.segment<4>(part_idx * 4).setZero();
-      m_dv.segment<4>(part_idx * 4).setZero();
-      m_fluid_v.segment<4>(part_idx * 4) =
-          Vector4s(bucket_buffer[i].second(0), bucket_buffer[i].second(1),
-                   bucket_buffer[i].second(2), 0.0);
-      m_m.segment<4>(part_idx * 4).setZero();
-      m_fluid_m.segment<3>(part_idx * 4)
-          .setConstant(rel_vol * m_liquid_info.liquid_density);
-      m_fluid_m(part_idx * 4 + 3) =
-          m_fluid_m(part_idx * 4 + 0) * rel_rad * rel_rad * 0.4;
-      m_fluid_vol(part_idx) = rel_vol;
-      m_vol(part_idx) = 0.0;
-      m_rest_vol(part_idx) = 0.0;
-      m_radius(part_idx * 2 + 0) = m_radius(part_idx * 2 + 1) = rel_rad;
-      m_volume_fraction(part_idx) = 0.0;
-      m_rest_volume_fraction(part_idx) = 0.0;
-      m_fixed[part_idx] = 0U;
-      m_twist[part_idx] = false;
-      m_particle_rest_length(part_idx) = rel_rad * 2.0;
-      m_particle_rest_area(part_idx) = M_PI * rel_rad * rel_rad;
-      m_particle_group[part_idx] = 0;
-      m_B.block<3, 3>(part_idx * 3, 0).setZero();
-      m_fB.block<3, 3>(part_idx * 3, 0).setZero();
-      m_is_strand_tip[part_idx] = false;
-      m_div[part_idx].resize(0);
-      m_particle_to_surfel[part_idx] = -1;
-      m_inside[part_idx] = 0U;
-      m_orientation.segment<3>(part_idx * 3).setZero();
-      m_shape_factor(part_idx) = 0.0;
-
-      m_fluids[sp_idx] = part_idx;
-    }
-  });
-
-  m_particle_buckets.sort(getNumParticles(), [&](int pidx, int& i, int& j,
-                                                 int& k) {
-    i = (int)floor((m_x(pidx * 4 + 0) - m_bucket_mincorner(0)) / m_bucket_size);
-    j = (int)floor((m_x(pidx * 4 + 1) - m_bucket_mincorner(1)) / m_bucket_size);
-    k = (int)floor((m_x(pidx * 4 + 2) - m_bucket_mincorner(2)) / m_bucket_size);
-  });
-
-  scalar new_sum_vol = m_fluid_vol.sum();
-  if (new_sum_vol > 1e-20) {
-    const scalar prop = old_sum_vol / new_sum_vol;
-    m_fluid_vol *= prop;
-    m_fluid_m *= prop;
-    threadutils::for_each(num_elasto_parts, num_part, [&](int pidx) {
-      m_radius(pidx * 2 + 0) = m_radius(pidx * 2 + 1) =
-          pow(m_fluid_vol(pidx) * 0.75 / M_PI, 1.0 / 3.0);
-    });
-  }
-
-  updateGaussManifoldSystem();
 }
 
 /*!

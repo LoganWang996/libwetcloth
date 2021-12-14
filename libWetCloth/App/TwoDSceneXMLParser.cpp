@@ -1177,9 +1177,7 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   LiquidInfo info;
   info.air_density = 1.2041e-3;  // dyn/cm
   info.liquid_density = 1.0;     // g/cm^3
-  info.rest_contact_angle = 40.8 / 180.0 * M_PI;
   info.yazdchi_power = 1.6;
-  info.viscosity = 8.9e-3;
   info.yarn_diameter = 0.01;
   info.rest_volume_fraction = 0.4;
   info.lambda = 2.0;
@@ -1189,15 +1187,13 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.elasto_advect_coeff = 0.996;
   info.particle_cell_multiplier = 0.25;
   info.levelset_young_modulus = 6.6e6;
-  info.use_cohesion = true; // ?
   info.solve_solid = true; // ?
   info.use_levelset_force = true; // ?
-  info.use_twist = true; // !
+  info.use_twist = true;
   info.use_amgpcg_solid = false;
-  info.use_pcr = true; // !
+  info.use_pcr = true;
   info.use_lagrangian_mpm = false;
   info.use_cosolve_angular = false;
-  info.compute_viscosity = false; // ? !
   info.levelset_thickness = 0.25;
   info.iteration_print_step = 0;
   info.elasto_capture_rate = 1.0;

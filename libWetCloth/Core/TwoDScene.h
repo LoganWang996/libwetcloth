@@ -35,8 +35,6 @@ enum NODE_STATE { NS_NONE, NS_FLUID, NS_SOLID };
 struct LiquidInfo {
   scalar liquid_density;
   scalar air_density;
-  scalar viscosity;
-  scalar rest_contact_angle;
   scalar yazdchi_power;
   scalar yarn_diameter;
   scalar rest_volume_fraction;
@@ -51,13 +49,11 @@ struct LiquidInfo {
   scalar levelset_thickness;
   scalar elasto_capture_rate;
   int iteration_print_step;
-  bool use_cohesion;
   bool solve_solid;
   bool use_levelset_force;
   bool use_twist;
   bool use_amgpcg_solid;
   bool use_pcr;
-  bool compute_viscosity;
   bool use_lagrangian_mpm;
   bool use_cosolve_angular;
 

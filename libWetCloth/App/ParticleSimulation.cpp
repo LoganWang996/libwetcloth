@@ -204,12 +204,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
   TwAddVarRW(bar, "air density", TW_TYPE_DOUBLE, &info.air_density,
     " min=0.0 max=0.1 step=1e-3 help='Air density  (g/cm^3)' "
     "group='dynamic parameters'");
-  TwAddVarRW(bar, "liquid viscosity", TW_TYPE_DOUBLE, &info.viscosity,
-    " min=0.0 max=100.0 step=0.0001 help='Liquid viscosity "
-    "(dyn·s/cm^2)' group='dynamic parameters'");
-  TwAddVarRW(bar, "contact angle", TW_TYPE_DOUBLE, &info.rest_contact_angle,
-    " min=0.0 max=1.8325957146 step=0.0001 help='Liquid-solid contact "
-    "angle (rad)' group='dynamic parameters'");
   TwAddVarRW(bar, "drag nonlinearity", TW_TYPE_DOUBLE, &info.yazdchi_power,
     " min=0.0 max=3.0 step=0.1 help='Drag nonlinearity' "
     "group='dynamic parameters'");
@@ -241,8 +235,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
     TwType bendingType = TwDefineEnum("bendingType", bendingEV, 3);
   }
 
-  TwAddVarRW(bar, "Use cohesion", TW_TYPE_BOOLCPP, &info.use_cohesion,
-    " help='Use/Not use cohesion force' group='features'");
   TwAddVarRW(bar, "Solve cloth/yarn", TW_TYPE_BOOLCPP, &info.solve_solid,
     " help='Calculate the dynamics of cloth/yarn' group='features'");
   TwAddVarRW(bar, "Use levelset collision", TW_TYPE_BOOLCPP,
