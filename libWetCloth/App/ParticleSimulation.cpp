@@ -229,22 +229,10 @@ void ParticleSimulation::initializeOpenGLRenderer() {
   TwAddVarRW(bar, "power of fraction", TW_TYPE_DOUBLE, &info.lambda,
     " min=0.0 max=3.0 step=0.1 help='Volume Fraction Power' "
     "group='dynamic parameters'");
-  TwAddVarRW(bar, "cohesion multiplier", TW_TYPE_DOUBLE, &info.cohesion_coeff,
-    " min=0.0 max=1.0 step=0.001 help='Strength of cohesion' "
-    "group='dynamic parameters'");
-  TwAddVarRW(bar, "correction range", TW_TYPE_DOUBLE,
-    &info.correction_multiplier,
-    " min=0.0 max=10.0 step=0.1 help='Range of liquid particle "
-    "correction' group='dynamic parameters'");
   TwAddVarRW(bar, "correction strength", TW_TYPE_DOUBLE,
     &info.correction_strength,
     " min=0.0 max=10.0 step=0.1 help='Strength of liquid particle "
     "correction' group='dynamic parameters'");
-  TwAddVarRW(
-    bar, "passes of curvature smoothing", TW_TYPE_INT32,
-    &info.surf_tension_smoothing_step,
-    " min=0 max=1000 step=1 help='# passes of Laplacian smoothing of the "
-    "curvature before computing surface tension' group='dynamic parameters'");
   TwAddVarRW(bar, "Liquid 1st-order lossless", TW_TYPE_DOUBLE, &info.flip_coeff,
     " min=0.0 max=1.0 step=0.0001 help='Lossless of liquid 1st-order "
     "movement' group='dynamic parameters'");
@@ -268,9 +256,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
     TwEnumVal bendingEV[] = {
         {0, "tan(angle)"}, {1, "sin(angle)"}, {2, "angle"} };
     TwType bendingType = TwDefineEnum("bendingType", bendingEV, 3);
-    TwAddVarRW(bar, "Bending energy", bendingType, &info.bending_scheme,
-      " help='Change the way to calculate bending energy of cloth' "
-      "group='dynamic parameters'");
   }
 
   TwAddVarRW(bar, "Use cohesion", TW_TYPE_BOOLCPP, &info.use_cohesion,

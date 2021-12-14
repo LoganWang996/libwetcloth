@@ -44,8 +44,6 @@ struct LiquidInfo {
   scalar yarn_diameter;
   scalar rest_volume_fraction;
   scalar lambda;
-  scalar cohesion_coeff;
-  scalar correction_multiplier;
   scalar correction_strength;
   scalar flip_coeff;
   scalar elasto_flip_asym_coeff;
@@ -53,12 +51,9 @@ struct LiquidInfo {
   scalar elasto_advect_coeff;
   scalar particle_cell_multiplier;
   scalar levelset_young_modulus;
-  scalar liquid_boundary_friction;
   scalar levelset_thickness;
   scalar elasto_capture_rate;
-  int bending_scheme;
   int iteration_print_step;
-  int surf_tension_smoothing_step;
   bool use_cohesion;
   bool solve_solid;
   bool use_levelset_force;
@@ -460,8 +455,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   const std::vector<VectorXi>& getNodePressureIndexZ() const;
 
-  void distributeFluidElasto(const scalar& dt);
-
   void distributeElastoFluid();
 
   void swapParticles(int i, int j);
@@ -469,8 +462,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void mapParticleNodesAPIC();  // particles to nodes mapping
 
   void mapParticleSaturationPsiNodes();
-
-  void updatePorePressureNodes();
 
   void mapNodeParticlesAPIC();  // nodes to particles mapping
 
@@ -708,9 +699,7 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void updateLiquidPhi(scalar dt);
   void extendLiquidPhi();
   void renormalizeLiquidPhi();
-  void updateCurvatureP();
   void updateColorP();
-  void advectCurvatureP(const scalar& dt);
   void estimateVolumeFractions(std::vector<VectorXs>& volumes,
                                const std::vector<VectorXs>& node_pos,
                                const Vector3s& np_offset);
@@ -825,8 +814,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   scalar getPlanarDragCoeff(const scalar& psi, const scalar& sat,
                             const scalar& dv, int material) const;
 
-  scalar getVerticalDiffusivity(const scalar& psi, int material) const;
-
   scalar getDragCoeffWithOrientation(const scalar& psi, const scalar& sat,
                                      const scalar& dv,
                                      const Vector3s& orientation,
@@ -884,8 +871,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void insertSolveGroup(const VectorXi& group);
 
   const std::vector<VectorXi>& getSolveGroup() const;
-
-  void constrainLiquidVelocity();
 
   void updateStrandParamViscosity(const scalar& dt);
 

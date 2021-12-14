@@ -152,7 +152,7 @@ void TwoDSceneXMLParser::loadParticleSimulation(
   scene->updateIntersection();
   scene->mapParticleNodesAPIC();
   scene->mapParticleSaturationPsiNodes();
-  scene->updatePorePressureNodes();
+  // scene->updatePorePressureNodes();
 
   scene->saveParticleVelocity();
 
@@ -1190,18 +1190,13 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.yarn_diameter = 0.01;
   info.rest_volume_fraction = 0.4;
   info.lambda = 2.0;
-  info.cohesion_coeff = 0.002;
-  info.correction_multiplier = 2.0;
   info.correction_strength = 0.2;
   info.flip_coeff = 0.996;
   info.elasto_flip_asym_coeff = 0.996;
   info.elasto_flip_coeff = 0.0;
   info.elasto_advect_coeff = 0.996;
   info.particle_cell_multiplier = 0.25;
-  info.bending_scheme = 2;
   info.levelset_young_modulus = 6.6e6;
-  info.liquid_boundary_friction = 1.0;
-  info.surf_tension_smoothing_step = 7;
   info.use_cohesion = true; // ?
   info.solve_solid = true; // ?
   info.use_levelset_force = true; // ?

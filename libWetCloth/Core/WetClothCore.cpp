@@ -146,9 +146,6 @@ void WetClothCore::stepSystem(const scalar& dt) {
     // Update Saturation and Solid Volume Fraction on Grid
     m_scene->mapParticleSaturationPsiNodes();
 
-    // Compute the Pore Pressure on Grid
-    m_scene->updatePorePressureNodes();
-
     t1 = timingutils::seconds();
     timing_buffer[3] +=
         t1 - t0;  // APIC Mapping & Computing the Fields (all above)
@@ -206,12 +203,6 @@ void WetClothCore::stepSystem(const scalar& dt) {
     m_scene->solidProjection(sub_dt);
     t1 = timingutils::seconds();
     timing_buffer[10] += t1 - t0;  // Particle Advection
-    t0 = t1;
-
-    // Distribute the Liquid Volume onto Elastic Vertices (Capturing)
-    m_scene->distributeFluidElasto(sub_dt);
-    t1 = timingutils::seconds();
-    timing_buffer[11] += t1 - t0;  // Liquid Capturing
     t0 = t1;
 
     // Emit Liquid Particles for Overflowed Elastic Vertices (Dripping) (removed)
