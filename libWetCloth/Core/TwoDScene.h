@@ -40,7 +40,6 @@ struct LiquidInfo {
   scalar air_viscosity;
   scalar rest_contact_angle;
   scalar yazdchi_power;
-  scalar pore_radius;
   scalar yarn_diameter;
   scalar rest_volume_fraction;
   scalar lambda;
@@ -536,8 +535,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   scalar getInitialVolumeFraction(int pidx) const;
 
-  scalar getCapillaryPressure(const scalar& psi) const;
-
   scalar getGaussRadius(int pidx, int dir) const;
 
   scalar getMu(int pidx) const;
@@ -626,17 +623,12 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void accumulateGradU(VectorXs& F, const VectorXs& dx = VectorXs(),
                        const VectorXs& dv = VectorXs());
 
-  void accumulateFluidGradU(VectorXs& F, const VectorXs& dx = VectorXs(),
-                            const VectorXs& dv = VectorXs());
-
   void accumulateFluidNodeGradU(std::vector<VectorXs>& node_rhs_x,
                                 std::vector<VectorXs>& node_rhs_y,
                                 std::vector<VectorXs>& node_rhs_z,
                                 scalar coeff);
 
   void accumulateManifoldFluidGradU(VectorXs& F);
-
-  void accumulateManifoldGradPorePressure(VectorXs& F);
 
   void accumulateGaussGradU(MatrixXs& F, const VectorXs& dx = VectorXs(),
                             const VectorXs& dv = VectorXs());
@@ -861,8 +853,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void updateShapeFactor();
 
   void updateOrientation();
-
-  scalar totalFluidVolumeParticles() const;
 
   scalar totalFluidVolumeSoftElasto() const;
 

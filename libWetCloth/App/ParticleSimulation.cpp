@@ -73,11 +73,6 @@ void ParticleSimulation::stepSystem(const scalar& dt) {
   std::cout << "---------------------------------" << std::endl;
   std::cout << "Total Time (per Frame), " << total_time << ", "
     << (total_time / divisor) << std::endl;
-  scalar part_fluid_vol = m_core->getScene()->totalFluidVolumeParticles();
-  scalar vert_fluid_vol = m_core->getScene()->totalFluidVolumeSoftElasto();
-  std::cout << "Liquid Vol, " << part_fluid_vol << ", " << vert_fluid_vol
-    << ", " << (part_fluid_vol + vert_fluid_vol) << std::endl;
-
   int peak_idx = 0;
   int cur_idx = 0;
 
@@ -196,8 +191,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
 
   LiquidInfo& info = m_core->getScene()->getLiquidInfo();
 
-  TwAddVarRO(bar, "pore radius", TW_TYPE_DOUBLE, &info.pore_radius,
-    " help='Pore radius (cm)' group='static parameters'");
   TwAddVarRO(bar, "fiber diameter", TW_TYPE_DOUBLE, &info.yarn_diameter,
     " help='Yarn (mesh-based) / fiber (yarn-based) diameter (cm)' "
     "group='static parameters'");

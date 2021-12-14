@@ -152,7 +152,6 @@ void TwoDSceneXMLParser::loadParticleSimulation(
   scene->updateIntersection();
   scene->mapParticleNodesAPIC();
   scene->mapParticleSaturationPsiNodes();
-  // scene->updatePorePressureNodes();
 
   scene->saveParticleVelocity();
 
@@ -1186,7 +1185,6 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.yazdchi_power = 1.6;
   info.viscosity = 8.9e-3;
   info.air_viscosity = 1.81e-4;
-  info.pore_radius = 0.005;
   info.yarn_diameter = 0.01;
   info.rest_volume_fraction = 0.4;
   info.lambda = 2.0;

@@ -35,7 +35,6 @@ std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
   os << "air viscosity: " << info.air_viscosity << std::endl;
   os << "rest contact angle: " << info.rest_contact_angle << std::endl;
   os << "yazdchi power: " << info.yazdchi_power << std::endl;
-  os << "pore radius: " << info.pore_radius << std::endl;
   os << "fiber diameter: " << info.yarn_diameter << std::endl;
   os << "rest volume fraction: " << info.rest_volume_fraction << std::endl;
   os << "lambda: " << info.lambda << std::endl;
@@ -537,18 +536,6 @@ scalar TwoDScene::getGaussDensity(int pidx) const {
 
 scalar TwoDScene::getInitialVolumeFraction(int pidx) const {
   return m_liquid_info.rest_volume_fraction;
-}
-
-/*!
- * calculate capillary pressure caused by saturation difference
- */
-scalar TwoDScene::getCapillaryPressure(const scalar& psi) const {
-  if (1.0 - psi < 1e-20 || m_liquid_info.pore_radius < 1e-20) return 0.0;
-  return 0.0;
-  const scalar alpha = psi / (1. - psi);
-  const scalar surf_tension = m_liquid_info.surf_tension_coeff;
-  const scalar contact_angle = cos(m_liquid_info.rest_contact_angle);
-  return alpha * surf_tension * contact_angle / m_liquid_info.pore_radius;
 }
 
 /*!
@@ -5615,52 +5602,6 @@ const std::vector<Vector3s>& TwoDScene::getFaceWeights() const {
   return m_face_weights;
 }
 
-/*!
- * calculate pore pressure on manifold
- */
-void TwoDScene::accumulateManifoldGradPorePressure(VectorXs& F) {
-  const int num_elasto = getNumElastoParticles();
-
-  VectorXs pore_pressure(num_elasto);
-  pore_pressure.setZero();
-
-  threadutils::for_each(0, num_elasto, [&](int pidx) {
-    const scalar vol_empty = m_vol(pidx) * (1.0 - m_volume_fraction(pidx));
-    const scalar s =
-        (vol_empty > 1e-20)
-            ? mathutils::clamp(m_fluid_vol(pidx) / vol_empty, 0.0, 1.0)
-            : 0.0;
-    pore_pressure(pidx) =
-        getCapillaryPressure(m_volume_fraction(pidx)) * (1.0 - s) * 2.0;
-
-  });
-
-  const int num_edges = getNumEdges();
-  const int num_faces = getNumFaces();
-
-  threadutils::for_each(0, num_edges, [&](int eidx) {
-    const auto& e = m_edges.row(eidx);
-
-    const Vector3s gradp =
-        m_grad_gauss.block<3, 1>(eidx * 3, 0) * pore_pressure(e(0)) +
-        m_grad_gauss.block<3, 1>(eidx * 3, 1) * pore_pressure(e(1));
-
-    F.segment<3>(eidx * 3) += gradp * m_fluid_vol_gauss(eidx);
-  });
-
-  threadutils::for_each(0, num_faces, [&](int fidx) {
-    const auto& f = m_faces.row(fidx);
-    const int gidx = fidx + num_edges;
-
-    const Vector3s gradp =
-        m_grad_gauss.block<3, 1>(gidx * 3, 0) * pore_pressure(f[0]) +
-        m_grad_gauss.block<3, 1>(gidx * 3, 1) * pore_pressure(f[1]) +
-        m_grad_gauss.block<3, 1>(gidx * 3, 2) * pore_pressure(f[2]);
-
-    F.segment<3>(gidx * 3) += gradp * m_fluid_vol_gauss(gidx);
-  });
-}
-
 void TwoDScene::accumulateFluidNodeGradU(std::vector<VectorXs>& node_rhs_x,
                                          std::vector<VectorXs>& node_rhs_y,
                                          std::vector<VectorXs>& node_rhs_z,
@@ -5697,32 +5638,6 @@ void TwoDScene::accumulateGradU(VectorXs& F, const VectorXs& dx,
                                      m_liquid_info.lambda, F);
     }
   }
-}
-
-void TwoDScene::accumulateFluidGradU(VectorXs& F, const VectorXs& dx,
-                                     const VectorXs& dv) {
-  if (dx.size() == 0)
-    for (std::vector<Force*>::size_type i = 0; i < m_forces.size(); ++i) {
-      if (m_forces[i]->flag() & 2)
-        m_forces[i]->addGradEToTotal(m_x, m_fluid_v, m_fluid_m,
-                                     m_volume_fraction, m_liquid_info.lambda,
-                                     F);
-    }
-  else {
-    VectorXs ddx = m_x + dx;
-    VectorXs ddv = m_fluid_v + dv;
-
-    for (std::vector<Force*>::size_type i = 0; i < m_forces.size(); ++i) {
-      if (m_forces[i]->flag() & 2)
-        m_forces[i]->addGradEToTotal(ddx, ddv, m_fluid_m, m_volume_fraction,
-                                     m_liquid_info.lambda, F);
-    }
-  }
-}
-
-scalar TwoDScene::totalFluidVolumeParticles() const {
-  const int num_elasto = getNumSoftElastoParticles();
-  return m_fluid_vol.segment(0, num_elasto).sum();
 }
 
 bool TwoDScene::useAMGPCGSolid() const {
