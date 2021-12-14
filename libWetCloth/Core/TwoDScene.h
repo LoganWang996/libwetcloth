@@ -63,7 +63,6 @@ struct LiquidInfo {
   bool use_cohesion;
   bool solve_solid;
   bool use_levelset_force;
-  bool apply_pressure_manifold;
   bool use_twist;
   bool use_amgpcg_solid;
   bool use_pcr;

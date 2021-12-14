@@ -1207,7 +1207,6 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.solve_solid = true; // ?
   info.use_levelset_force = true; // ?
   info.use_twist = true; // !
-  info.apply_pressure_manifold = true;
   info.use_amgpcg_solid = false;
   info.use_pcr = true; // !
   info.use_lagrangian_mpm = false;

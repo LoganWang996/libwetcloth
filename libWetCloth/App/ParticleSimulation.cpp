@@ -284,10 +284,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
     &info.use_levelset_force,
     " help='Apply penalty force between cloth/yarn and levelset' "
     "group='features'");
-  TwAddVarRW(bar, "Pressure gradient on manifold", TW_TYPE_BOOLCPP,
-    &info.apply_pressure_manifold,
-    " help='Apply pressure gradient from liquid when solving flows on "
-    "manifold' group='features'");
   TwAddVarRW(bar, "Use twisting force", TW_TYPE_BOOLCPP, &info.use_twist,
     " help='Apply twisting force' group='features'");
   TwAddVarRW(

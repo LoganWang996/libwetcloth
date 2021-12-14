@@ -6416,20 +6416,6 @@ void TwoDScene::accumulateManifoldGradPorePressure(VectorXs& F) {
     pore_pressure(pidx) =
         getCapillaryPressure(m_volume_fraction(pidx)) * (1.0 - s) * 2.0;
 
-    if (m_liquid_info.apply_pressure_manifold) {
-      auto& indices_p = m_particle_nodes_p[pidx];
-      auto& weights = m_particle_weights_p[pidx];
-      const int num_indices = indices_p.rows();
-
-      scalar p = 0.0;
-
-      for (int i = 0; i < num_indices; ++i) {
-        if (weights(i) == 0.0 || !m_bucket_activated[indices_p(i, 0)]) continue;
-        p += m_node_pressure[indices_p(i, 0)][indices_p(i, 1)] * weights[i];
-      }
-
-      pore_pressure(pidx) -= p;
-    }
   });
 
   const int num_edges = getNumEdges();
