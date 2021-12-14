@@ -36,7 +36,6 @@ struct LiquidInfo {
   scalar yazdchi_power;
   scalar rest_volume_fraction;
   scalar lambda;
-  scalar correction_strength;
   scalar flip_coeff;
   scalar elasto_flip_asym_coeff;
   scalar elasto_flip_coeff;
