@@ -75,14 +75,7 @@ struct LiquidInfo {
   bool use_pcr;
   bool apply_pore_pressure_solid;
   bool propagate_solid_velocity;
-  bool check_divergence;
-  bool use_varying_fraction;
   bool compute_viscosity;
-  bool implicit_viscosity;
-  bool drag_by_future_solid;
-  bool drag_by_air;
-  bool init_nonuniform_fraction;
-  bool use_group_precondition;
   bool use_lagrangian_mpm;
   bool use_cosolve_angular;
 

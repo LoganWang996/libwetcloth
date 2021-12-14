@@ -52,24 +52,14 @@ std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
   os << "correction step: " << info.correction_step << std::endl;
   os << "bending scheme: " << info.bending_scheme << std::endl;
   os << "use cohesion: " << info.use_cohesion << std::endl;
-  os << "solid cohesion: " << info.solid_cohesion << std::endl;
-  os << "soft cohesion: " << info.soft_cohesion << std::endl;
   os << "solve solid: " << info.solve_solid << std::endl;
   os << "use nonlinear drag: " << info.use_nonlinear_drag << std::endl;
   os << "use drag: " << info.use_drag << std::endl;
-  os << "apply pressure solid: " << info.apply_pressure_solid << std::endl;
   os << "use levelset force: " << info.use_levelset_force << std::endl;
   os << "apply pressure manifold: " << info.apply_pressure_manifold
      << std::endl;
   os << "use twist: " << info.use_twist << std::endl;
-  os << "use bicgstab: " << info.use_bicgstab << std::endl;
   os << "use amgpcg solid: " << info.use_amgpcg_solid << std::endl;
-  os << "apply pore pressure solid: " << info.apply_pore_pressure_solid
-     << std::endl;
-  os << "propagate solid velocity: " << info.propagate_solid_velocity
-     << std::endl;
-  os << "check divergence: " << info.check_divergence << std::endl;
-  os << "use varying fraction: " << info.use_varying_fraction << std::endl;
   return os;
 }
 
@@ -681,10 +671,6 @@ void TwoDScene::loadAttachForces() {
       m_attach_forces.push_back(af);
     }
   }
-}
-
-bool TwoDScene::propagateSolidVelocity() const {
-  return m_liquid_info.propagate_solid_velocity;
 }
 
 bool TwoDScene::isTip(int particle) const {
@@ -6575,8 +6561,6 @@ scalar TwoDScene::totalFluidVolumeParticles() const {
 bool TwoDScene::useAMGPCGSolid() const {
   return m_liquid_info.use_amgpcg_solid;
 }
-
-bool TwoDScene::useBiCGSTAB() const { return m_liquid_info.use_bicgstab; }
 
 scalar TwoDScene::totalFluidVolumeSoftElasto() const {
   const int num_elasto = getNumElastoParticles();

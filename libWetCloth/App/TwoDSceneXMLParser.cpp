@@ -1070,9 +1070,8 @@ void TwoDSceneXMLParser::loadHairs(rapidxml::xml_node<>* node,
         twodscene->setTwist(particle_indices[i],
                             twodscene->getLiquidInfo().use_twist);
 
-        if (!twodscene->getLiquidInfo().init_nonuniform_fraction)
-          twodscene->setVolumeFraction(particle_indices[i],
-                                       params->m_restVolumeFraction);
+        twodscene->setVolumeFraction(particle_indices[i],
+          params->m_restVolumeFraction);
       }
 
     } else {
@@ -1138,9 +1137,8 @@ void TwoDSceneXMLParser::loadHairs(rapidxml::xml_node<>* node,
         twodscene->setTwist(particle_indices[i],
                             twodscene->getLiquidInfo().use_twist);
 
-        if (!twodscene->getLiquidInfo().init_nonuniform_fraction)
-          twodscene->setVolumeFraction(particle_indices[i],
-                                       params->m_restVolumeFraction);
+        twodscene->setVolumeFraction(particle_indices[i],
+          params->m_restVolumeFraction);
       }
     }
 
@@ -1220,16 +1218,9 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.use_amgpcg_solid = false;
   info.use_pcr = true; // !
   info.propagate_solid_velocity = false;
-  info.check_divergence = false;
-  info.use_varying_fraction = false;
-  info.compute_viscosity = false;
-  info.implicit_viscosity = false;
-  info.drag_by_future_solid = false;
-  info.drag_by_air = false;
-  info.init_nonuniform_fraction = false;
-  info.use_group_precondition = false;
   info.use_lagrangian_mpm = false;
   info.use_cosolve_angular = false;
+  info.compute_viscosity = false; // ? !
   info.levelset_thickness = 0.25;
   info.iteration_print_step = 0;
   info.elasto_capture_rate = 1.0;

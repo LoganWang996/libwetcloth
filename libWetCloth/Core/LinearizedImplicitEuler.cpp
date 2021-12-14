@@ -22,19 +22,19 @@
 //#define CHECK_EQU_24
 
 LinearizedImplicitEuler::LinearizedImplicitEuler(
-    const scalar& criterion, const scalar& pressure_criterion,
-    const scalar& quasi_static_criterion, const scalar& viscous_criterion,
-    int maxiters, int manifold_substeps, int viscosity_substeps,
-    int surf_tension_substeps)
-    : SceneStepper(),
-      m_pcg_criterion(criterion),
-      m_pressure_criterion(pressure_criterion),
-      m_quasi_static_criterion(quasi_static_criterion),
-      m_viscous_criterion(viscous_criterion),
-      m_maxiters(maxiters),
-      m_manifold_substeps(manifold_substeps),
-      m_viscosity_substeps(viscosity_substeps),
-      m_surf_tension_substeps(surf_tension_substeps) {}
+  const scalar& criterion, const scalar& pressure_criterion,
+  const scalar& quasi_static_criterion, const scalar& viscous_criterion,
+  int maxiters, int manifold_substeps, int viscosity_substeps,
+  int surf_tension_substeps)
+  : SceneStepper(),
+  m_pcg_criterion(criterion),
+  m_pressure_criterion(pressure_criterion),
+  m_quasi_static_criterion(quasi_static_criterion),
+  m_viscous_criterion(viscous_criterion),
+  m_maxiters(maxiters),
+  m_manifold_substeps(manifold_substeps),
+  m_viscosity_substeps(viscosity_substeps),
+  m_surf_tension_substeps(surf_tension_substeps) {}
 
 LinearizedImplicitEuler::~LinearizedImplicitEuler() {}
 
@@ -43,15 +43,15 @@ bool LinearizedImplicitEuler::stepScene(TwoDScene& scene, scalar dt) {
 }
 
 void LinearizedImplicitEuler::performInvLocalSolve(
-    const TwoDScene& scene, const std::vector<VectorXs>& node_rhs_x,
-    const std::vector<VectorXs>& node_rhs_y,
-    const std::vector<VectorXs>& node_rhs_z,
-    const std::vector<VectorXs>& node_inv_mass_x,
-    const std::vector<VectorXs>& node_inv_mass_y,
-    const std::vector<VectorXs>& node_inv_mass_z,
-    std::vector<VectorXs>& out_node_vec_x,
-    std::vector<VectorXs>& out_node_vec_y,
-    std::vector<VectorXs>& out_node_vec_z) {
+  const TwoDScene& scene, const std::vector<VectorXs>& node_rhs_x,
+  const std::vector<VectorXs>& node_rhs_y,
+  const std::vector<VectorXs>& node_rhs_z,
+  const std::vector<VectorXs>& node_inv_mass_x,
+  const std::vector<VectorXs>& node_inv_mass_y,
+  const std::vector<VectorXs>& node_inv_mass_z,
+  std::vector<VectorXs>& out_node_vec_x,
+  std::vector<VectorXs>& out_node_vec_y,
+  std::vector<VectorXs>& out_node_vec_z) {
   const Sorter& buckets = scene.getParticleBuckets();
 
   buckets.for_each_bucket([&](int bucket_idx) {
@@ -84,9 +84,9 @@ void LinearizedImplicitEuler::performInvLocalSolve(
 }
 
 void LinearizedImplicitEuler::performLocalSolve(const TwoDScene& scene,
-                                                const VectorXs& rhs,
-                                                const VectorXs& m,
-                                                VectorXs& out) {
+  const VectorXs& rhs,
+  const VectorXs& m,
+  VectorXs& out) {
   const int num_elasto = scene.getNumSoftElastoParticles();
 
   threadutils::for_each(0, num_elasto * 4, [&](int pidx) {
@@ -95,9 +95,9 @@ void LinearizedImplicitEuler::performLocalSolve(const TwoDScene& scene,
 }
 
 void LinearizedImplicitEuler::performLocalSolveTwist(const TwoDScene& scene,
-                                                     const VectorXs& rhs,
-                                                     const VectorXs& m,
-                                                     VectorXs& out) {
+  const VectorXs& rhs,
+  const VectorXs& m,
+  VectorXs& out) {
   const int num_elasto = scene.getNumSoftElastoParticles();
 
   threadutils::for_each(0, num_elasto, [&](int pidx) {
@@ -106,15 +106,15 @@ void LinearizedImplicitEuler::performLocalSolveTwist(const TwoDScene& scene,
 }
 
 void LinearizedImplicitEuler::performLocalSolve(
-    const TwoDScene& scene, const std::vector<VectorXs>& node_rhs_x,
-    const std::vector<VectorXs>& node_rhs_y,
-    const std::vector<VectorXs>& node_rhs_z,
-    const std::vector<VectorXs>& node_masses_x,
-    const std::vector<VectorXs>& node_masses_y,
-    const std::vector<VectorXs>& node_masses_z,
-    std::vector<VectorXs>& out_node_vec_x,
-    std::vector<VectorXs>& out_node_vec_y,
-    std::vector<VectorXs>& out_node_vec_z) {
+  const TwoDScene& scene, const std::vector<VectorXs>& node_rhs_x,
+  const std::vector<VectorXs>& node_rhs_y,
+  const std::vector<VectorXs>& node_rhs_z,
+  const std::vector<VectorXs>& node_masses_x,
+  const std::vector<VectorXs>& node_masses_y,
+  const std::vector<VectorXs>& node_masses_z,
+  std::vector<VectorXs>& out_node_vec_x,
+  std::vector<VectorXs>& out_node_vec_y,
+  std::vector<VectorXs>& out_node_vec_z) {
   const Sorter& buckets = scene.getParticleBuckets();
 
   buckets.for_each_bucket([&](int bucket_idx) {
@@ -137,17 +137,17 @@ void LinearizedImplicitEuler::performLocalSolve(
     for (int i = 0; i < num_nodes; ++i) {
       if (bucket_node_masses_x[i] > 1e-20)
         bucket_out_node_vec_x[i] =
-            bucket_node_rhs_x[i] / bucket_node_masses_x[i];
+        bucket_node_rhs_x[i] / bucket_node_masses_x[i];
       else
         bucket_out_node_vec_x[i] = bucket_node_rhs_x[i];
       if (bucket_node_masses_y[i] > 1e-20)
         bucket_out_node_vec_y[i] =
-            bucket_node_rhs_y[i] / bucket_node_masses_y[i];
+        bucket_node_rhs_y[i] / bucket_node_masses_y[i];
       else
         bucket_out_node_vec_y[i] = bucket_node_rhs_y[i];
       if (bucket_node_masses_z[i] > 1e-20)
         bucket_out_node_vec_z[i] =
-            bucket_node_rhs_z[i] / bucket_node_masses_z[i];
+        bucket_node_rhs_z[i] / bucket_node_masses_z[i];
       else
         bucket_out_node_vec_z[i] = bucket_node_rhs_z[i];
     }
@@ -155,7 +155,7 @@ void LinearizedImplicitEuler::performLocalSolve(
 }
 
 bool LinearizedImplicitEuler::stepVelocityLagrangian(TwoDScene& scene,
-                                                     scalar dt) {
+  scalar dt) {
   scene.precompute();
 
   const int num_elasto = scene.getNumSoftElastoParticles();
@@ -180,7 +180,7 @@ bool LinearizedImplicitEuler::stepVelocityLagrangian(TwoDScene& scene,
 
   // map node to vertices
   mapNodeToSoftParticles(scene, m_node_rhs_x, m_node_rhs_y, m_node_rhs_z,
-                         m_lagrangian_rhs);
+    m_lagrangian_rhs);
 
   // accumulate regular -f
   scene.accumulateGradU(m_lagrangian_rhs);
@@ -192,7 +192,7 @@ bool LinearizedImplicitEuler::stepVelocityLagrangian(TwoDScene& scene,
 
   // h * f + m * v
   m_lagrangian_rhs +=
-      VectorXs(m.segment(0, ndof).array() * v.segment(0, ndof).array());
+    VectorXs(m.segment(0, ndof).array() * v.segment(0, ndof).array());
 
   m_v_plus.resize(ndof);
 
@@ -210,15 +210,15 @@ bool LinearizedImplicitEuler::stepVelocity(TwoDScene& scene, scalar dt) {
 
   allocateNodeVectors(scene, m_node_rhs_x, m_node_rhs_y, m_node_rhs_z);
   allocateNodeVectors(scene, m_node_rhs_fluid_x, m_node_rhs_fluid_y,
-                      m_node_rhs_fluid_z);
+    m_node_rhs_fluid_z);
 
   allocateNodeVectors(scene, m_node_hdvm_x, m_node_hdvm_y, m_node_hdvm_z);
   allocateNodeVectors(scene, m_node_inv_mfhdvm_x, m_node_inv_mfhdvm_y,
-                      m_node_inv_mfhdvm_z);
+    m_node_inv_mfhdvm_z);
   allocateNodeVectors(scene, m_node_mfhdvm_hdvm_x, m_node_mfhdvm_hdvm_y,
-                      m_node_mfhdvm_hdvm_z);
+    m_node_mfhdvm_hdvm_z);
   allocateNodeVectors(scene, m_node_mshdvm_hdvm_x, m_node_mshdvm_hdvm_y,
-                      m_node_mshdvm_hdvm_z);
+    m_node_mshdvm_hdvm_z);
   allocateNodeVectors(scene, m_node_inv_C_x, m_node_inv_C_y, m_node_inv_C_z);
   allocateNodeVectors(scene, m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z);
   allocateNodeVectors(scene, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z);
@@ -229,15 +229,15 @@ bool LinearizedImplicitEuler::stepVelocity(TwoDScene& scene, scalar dt) {
   allocateNodeVectors(scene, m_node_damped_x, m_node_damped_y, m_node_damped_z);
 
   constructNodeForce(scene, dt, m_node_rhs_x, m_node_rhs_y, m_node_rhs_z,
-                     m_node_rhs_fluid_x, m_node_rhs_fluid_y,
-                     m_node_rhs_fluid_z);
+    m_node_rhs_fluid_x, m_node_rhs_fluid_y,
+    m_node_rhs_fluid_z);
 
   constructHDV(scene, dt);
 
   constructInvMDV(scene);
 
   allocateNodeVectors(scene, m_node_v_fluid_plus_x, m_node_v_fluid_plus_y,
-                      m_node_v_fluid_plus_z);
+    m_node_v_fluid_plus_z);
 
   if (scene.getNumFluidParticles() > 0) {
     const std::vector<VectorXs>& node_mass_fluid_x = scene.getNodeFluidMassX();
@@ -245,9 +245,9 @@ bool LinearizedImplicitEuler::stepVelocity(TwoDScene& scene, scalar dt) {
     const std::vector<VectorXs>& node_mass_fluid_z = scene.getNodeFluidMassZ();
 
     performLocalSolve(scene, m_node_rhs_fluid_x, m_node_rhs_fluid_y,
-                      m_node_rhs_fluid_z, node_mass_fluid_x, node_mass_fluid_y,
-                      node_mass_fluid_z, m_node_v_fluid_plus_x,
-                      m_node_v_fluid_plus_y, m_node_v_fluid_plus_z);
+      m_node_rhs_fluid_z, node_mass_fluid_x, node_mass_fluid_y,
+      node_mass_fluid_z, m_node_v_fluid_plus_x,
+      m_node_v_fluid_plus_y, m_node_v_fluid_plus_z);
 
     // apply viscosity (removed)
   }
@@ -263,12 +263,12 @@ bool LinearizedImplicitEuler::stepVelocity(TwoDScene& scene, scalar dt) {
     const std::vector<VectorXs>& node_mass_z = scene.getNodeMassZ();
 
     performLocalSolve(scene, m_node_rhs_x, m_node_rhs_y, m_node_rhs_z,
-                      node_mass_x, node_mass_y, node_mass_z, m_node_v_plus_x,
-                      m_node_v_plus_y, m_node_v_plus_z);
+      node_mass_x, node_mass_y, node_mass_z, m_node_v_plus_x,
+      m_node_v_plus_y, m_node_v_plus_z);
 
     m_angular_v_plus_buffer.resize(scene.getNumSoftElastoParticles());
     performLocalSolveTwist(scene, m_angular_moment_buffer, scene.getM(),
-                           m_angular_v_plus_buffer);
+      m_angular_v_plus_buffer);
   }
 
   // record as u_s^* and u_f^*
@@ -283,8 +283,8 @@ bool LinearizedImplicitEuler::stepVelocity(TwoDScene& scene, scalar dt) {
 }
 
 void LinearizedImplicitEuler::performAngularGlobalMultiply(
-    const TwoDScene& scene, const scalar& dt, const VectorXs& m,
-    const VectorXs& v, VectorXs& out) {
+  const TwoDScene& scene, const scalar& dt, const VectorXs& m,
+  const VectorXs& v, VectorXs& out) {
   const int num_elasto = scene.getNumSoftElastoParticles();
   struct Triplets_override {
     int m_row, m_col;
@@ -299,7 +299,7 @@ void LinearizedImplicitEuler::performAngularGlobalMultiply(
     scalar val = 0.0;
     for (int j = idata_start; j < idata_end; ++j) {
       const Triplets_override& tri =
-          *((const Triplets_override*)&m_angular_triA[j]);
+        *((const Triplets_override*)&m_angular_triA[j]);
 
       val += tri.m_value * v[tri.m_col];
     }
@@ -308,10 +308,10 @@ void LinearizedImplicitEuler::performAngularGlobalMultiply(
 }
 
 void LinearizedImplicitEuler::performGlobalMultiply(const TwoDScene& scene,
-                                                    const scalar& dt,
-                                                    const VectorXs& m,
-                                                    const VectorXs& vec,
-                                                    VectorXs& out) {
+  const scalar& dt,
+  const VectorXs& m,
+  const VectorXs& vec,
+  VectorXs& out) {
   const int num_elasto = scene.getNumSoftElastoParticles();
 
   if (num_elasto == 0) return;
@@ -340,20 +340,20 @@ void LinearizedImplicitEuler::performGlobalMultiply(const TwoDScene& scene,
   });
 
   out = m_multiply_buffer * (dt * dt) +
-        VectorXs(m.segment(0, ndof).array() * vec.array());
+    VectorXs(m.segment(0, ndof).array() * vec.array());
 }
 
 void LinearizedImplicitEuler::performGlobalMultiply(
-    const TwoDScene& scene, const scalar& dt,
-    const std::vector<VectorXs>& node_m_x,
-    const std::vector<VectorXs>& node_m_y,
-    const std::vector<VectorXs>& node_m_z,
-    const std::vector<VectorXs>& node_v_x,
-    const std::vector<VectorXs>& node_v_y,
-    const std::vector<VectorXs>& node_v_z,
-    std::vector<VectorXs>& out_node_vec_x,
-    std::vector<VectorXs>& out_node_vec_y,
-    std::vector<VectorXs>& out_node_vec_z) {
+  const TwoDScene& scene, const scalar& dt,
+  const std::vector<VectorXs>& node_m_x,
+  const std::vector<VectorXs>& node_m_y,
+  const std::vector<VectorXs>& node_m_z,
+  const std::vector<VectorXs>& node_v_x,
+  const std::vector<VectorXs>& node_v_y,
+  const std::vector<VectorXs>& node_v_z,
+  std::vector<VectorXs>& out_node_vec_x,
+  std::vector<VectorXs>& out_node_vec_y,
+  std::vector<VectorXs>& out_node_vec_z) {
   const int num_elasto = scene.getNumSoftElastoParticles();
 
   if (num_elasto == 0) return;
@@ -364,7 +364,7 @@ void LinearizedImplicitEuler::performGlobalMultiply(
 
   // Wx
   mapNodeToSoftParticles(scene, node_v_x, node_v_y, node_v_z,
-                         m_pre_mult_buffer);
+    m_pre_mult_buffer);
 
   struct Triplets_override {
     int m_row, m_col;
@@ -388,7 +388,7 @@ void LinearizedImplicitEuler::performGlobalMultiply(
 
   // W^TAWx
   mapSoftParticlesToNode(scene, out_node_vec_x, out_node_vec_y, out_node_vec_z,
-                         m_multiply_buffer);
+    m_multiply_buffer);
 
   const Sorter& buckets = scene.getParticleBuckets();
 
@@ -399,30 +399,30 @@ void LinearizedImplicitEuler::performGlobalMultiply(
 
     // (M+h^2(W^TAW+H)x
     bucket_node_vec_x =
-        bucket_node_vec_x * (dt * dt) +
-        VectorXs(node_m_x[bucket_idx].array() * node_v_x[bucket_idx].array());
+      bucket_node_vec_x * (dt * dt) +
+      VectorXs(node_m_x[bucket_idx].array() * node_v_x[bucket_idx].array());
     bucket_node_vec_y =
-        bucket_node_vec_y * (dt * dt) +
-        VectorXs(node_m_y[bucket_idx].array() * node_v_y[bucket_idx].array());
+      bucket_node_vec_y * (dt * dt) +
+      VectorXs(node_m_y[bucket_idx].array() * node_v_y[bucket_idx].array());
     bucket_node_vec_z =
-        bucket_node_vec_z * (dt * dt) +
-        VectorXs(node_m_z[bucket_idx].array() * node_v_z[bucket_idx].array());
+      bucket_node_vec_z * (dt * dt) +
+      VectorXs(node_m_z[bucket_idx].array() * node_v_z[bucket_idx].array());
     //		std::cout << bucket_node_vec << std::endl;
   });
 }
 
 void LinearizedImplicitEuler::performGlobalMultiply(
-    const TwoDScene& scene, const scalar& dt,
-    const std::vector<VectorXs>& node_m_x,
-    const std::vector<VectorXs>& node_m_y,
-    const std::vector<VectorXs>& node_m_z,
-    const std::vector<VectorXs>& node_v_x,
-    const std::vector<VectorXs>& node_v_y,
-    const std::vector<VectorXs>& node_v_z,
-    std::vector<VectorXs>& out_node_vec_x,
-    std::vector<VectorXs>& out_node_vec_y,
-    std::vector<VectorXs>& out_node_vec_z, const VectorXs& m,
-    const VectorXs& angular_vec, VectorXs& out) {
+  const TwoDScene& scene, const scalar& dt,
+  const std::vector<VectorXs>& node_m_x,
+  const std::vector<VectorXs>& node_m_y,
+  const std::vector<VectorXs>& node_m_z,
+  const std::vector<VectorXs>& node_v_x,
+  const std::vector<VectorXs>& node_v_y,
+  const std::vector<VectorXs>& node_v_z,
+  std::vector<VectorXs>& out_node_vec_x,
+  std::vector<VectorXs>& out_node_vec_y,
+  std::vector<VectorXs>& out_node_vec_z, const VectorXs& m,
+  const VectorXs& angular_vec, VectorXs& out) {
   const int num_elasto = scene.getNumSoftElastoParticles();
 
   if (num_elasto == 0) return;
@@ -433,7 +433,7 @@ void LinearizedImplicitEuler::performGlobalMultiply(
 
   // Wx
   mapNodeToSoftParticles(scene, node_v_x, node_v_y, node_v_z,
-                         m_pre_mult_buffer);
+    m_pre_mult_buffer);
 
   // Redistribute angular DOFs
   threadutils::for_each(0, num_elasto, [&](int i) {
@@ -462,13 +462,13 @@ void LinearizedImplicitEuler::performGlobalMultiply(
   // grab angular DOFs back
   threadutils::for_each(0, num_elasto, [&](int i) {
     out(i) = m_multiply_buffer[i * 4 + 3] * (dt * dt) +
-             m(i * 4 + 3) * angular_vec(i);
+      m(i * 4 + 3) * angular_vec(i);
     m_multiply_buffer[i * 4 + 3] = 0.0;
   });
 
   // W^TAWx
   mapSoftParticlesToNode(scene, out_node_vec_x, out_node_vec_y, out_node_vec_z,
-                         m_multiply_buffer);
+    m_multiply_buffer);
 
   const Sorter& buckets = scene.getParticleBuckets();
 
@@ -479,24 +479,24 @@ void LinearizedImplicitEuler::performGlobalMultiply(
 
     // (M+h^2(W^TAW+H)x
     bucket_node_vec_x =
-        bucket_node_vec_x * (dt * dt) +
-        VectorXs(node_m_x[bucket_idx].array() * node_v_x[bucket_idx].array());
+      bucket_node_vec_x * (dt * dt) +
+      VectorXs(node_m_x[bucket_idx].array() * node_v_x[bucket_idx].array());
     bucket_node_vec_y =
-        bucket_node_vec_y * (dt * dt) +
-        VectorXs(node_m_y[bucket_idx].array() * node_v_y[bucket_idx].array());
+      bucket_node_vec_y * (dt * dt) +
+      VectorXs(node_m_y[bucket_idx].array() * node_v_y[bucket_idx].array());
     bucket_node_vec_z =
-        bucket_node_vec_z * (dt * dt) +
-        VectorXs(node_m_z[bucket_idx].array() * node_v_z[bucket_idx].array());
+      bucket_node_vec_z * (dt * dt) +
+      VectorXs(node_m_z[bucket_idx].array() * node_v_z[bucket_idx].array());
     //		std::cout << bucket_node_vec << std::endl;
   });
 }
 
 void LinearizedImplicitEuler::constructNodeForce(
-    TwoDScene& scene, const scalar& dt, std::vector<VectorXs>& node_rhs_x,
-    std::vector<VectorXs>& node_rhs_y, std::vector<VectorXs>& node_rhs_z,
-    std::vector<VectorXs>& node_rhs_fluid_x,
-    std::vector<VectorXs>& node_rhs_fluid_y,
-    std::vector<VectorXs>& node_rhs_fluid_z) {
+  TwoDScene& scene, const scalar& dt, std::vector<VectorXs>& node_rhs_x,
+  std::vector<VectorXs>& node_rhs_y, std::vector<VectorXs>& node_rhs_z,
+  std::vector<VectorXs>& node_rhs_fluid_x,
+  std::vector<VectorXs>& node_rhs_fluid_y,
+  std::vector<VectorXs>& node_rhs_fluid_z) {
   const int num_elasto = scene.getNumSoftElastoParticles();
   const VectorXs& m = scene.getM();
   const VectorXs& v = scene.getV();
@@ -515,14 +515,14 @@ void LinearizedImplicitEuler::constructNodeForce(
 
     threadutils::for_each(0, num_elasto, [&](int pidx) {
       m_angular_moment_buffer[pidx] =
-          rhs[pidx * 4 + 3] + m[pidx * 4 + 3] * v[pidx * 4 + 3];
+        rhs[pidx * 4 + 3] + m[pidx * 4 + 3] * v[pidx * 4 + 3];
     });
 
     mapSoftParticlesToNode(scene, node_rhs_x, node_rhs_y, node_rhs_z, rhs);
   }
 
   scene.accumulateFluidNodeGradU(node_rhs_fluid_x, node_rhs_fluid_y,
-                                 node_rhs_fluid_z, -dt);
+    node_rhs_fluid_z, -dt);
 
   ////////    // add grad pp to rhs (removed)
 
@@ -550,11 +550,11 @@ void LinearizedImplicitEuler::constructNodeForce(
       const VectorXs& node_vel_z = scene.getNodeVelocityZ()[bucket_idx];
 
       node_rhs_x[bucket_idx] +=
-          VectorXs(node_masses_x.array() * node_vel_x.array());
+        VectorXs(node_masses_x.array() * node_vel_x.array());
       node_rhs_y[bucket_idx] +=
-          VectorXs(node_masses_y.array() * node_vel_y.array());
+        VectorXs(node_masses_y.array() * node_vel_y.array());
       node_rhs_z[bucket_idx] +=
-          VectorXs(node_masses_z.array() * node_vel_z.array());
+        VectorXs(node_masses_z.array() * node_vel_z.array());
 
       assert(!std::isnan(node_rhs_x[bucket_idx].sum()));
       assert(!std::isnan(node_rhs_y[bucket_idx].sum()));
@@ -566,18 +566,18 @@ void LinearizedImplicitEuler::constructNodeForce(
     const VectorXs& node_masses_fluid_z = scene.getNodeFluidMassZ()[bucket_idx];
 
     const VectorXs& node_vel_fluid_x =
-        scene.getNodeFluidVelocityX()[bucket_idx];
+      scene.getNodeFluidVelocityX()[bucket_idx];
     const VectorXs& node_vel_fluid_y =
-        scene.getNodeFluidVelocityY()[bucket_idx];
+      scene.getNodeFluidVelocityY()[bucket_idx];
     const VectorXs& node_vel_fluid_z =
-        scene.getNodeFluidVelocityZ()[bucket_idx];
+      scene.getNodeFluidVelocityZ()[bucket_idx];
 
     node_rhs_fluid_x[bucket_idx] +=
-        VectorXs(node_masses_fluid_x.array() * node_vel_fluid_x.array());
+      VectorXs(node_masses_fluid_x.array() * node_vel_fluid_x.array());
     node_rhs_fluid_y[bucket_idx] +=
-        VectorXs(node_masses_fluid_y.array() * node_vel_fluid_y.array());
+      VectorXs(node_masses_fluid_y.array() * node_vel_fluid_y.array());
     node_rhs_fluid_z[bucket_idx] +=
-        VectorXs(node_masses_fluid_z.array() * node_vel_fluid_z.array());
+      VectorXs(node_masses_fluid_z.array() * node_vel_fluid_z.array());
 
     assert(!std::isnan(node_rhs_fluid_x[bucket_idx].sum()));
     assert(!std::isnan(node_rhs_fluid_y[bucket_idx].sum()));
@@ -586,12 +586,12 @@ void LinearizedImplicitEuler::constructNodeForce(
 }
 
 void LinearizedImplicitEuler::addSolidDrag(
-    TwoDScene& scene, const std::vector<VectorXs>& node_vel_x,
-    const std::vector<VectorXs>& node_vel_y,
-    const std::vector<VectorXs>& node_vel_z,
-    std::vector<VectorXs>& node_fluid_vel_x,
-    std::vector<VectorXs>& node_fluid_vel_y,
-    std::vector<VectorXs>& node_fluid_vel_z) {
+  TwoDScene& scene, const std::vector<VectorXs>& node_vel_x,
+  const std::vector<VectorXs>& node_vel_y,
+  const std::vector<VectorXs>& node_vel_z,
+  std::vector<VectorXs>& node_fluid_vel_x,
+  std::vector<VectorXs>& node_fluid_vel_y,
+  std::vector<VectorXs>& node_fluid_vel_z) {
   const Sorter& buckets = scene.getParticleBuckets();
 
   buckets.for_each_bucket([&](int bucket_idx) {
@@ -601,23 +601,23 @@ void LinearizedImplicitEuler::addSolidDrag(
 
     for (int i = 0; i < num_nodes; ++i) {
       node_fluid_vel_x[bucket_idx][i] += m_node_hdvm_x[bucket_idx][i] *
-                                         node_vel_x[bucket_idx][i] *
-                                         m_node_inv_mfhdvm_x[bucket_idx][i];
+        node_vel_x[bucket_idx][i] *
+        m_node_inv_mfhdvm_x[bucket_idx][i];
       node_fluid_vel_y[bucket_idx][i] += m_node_hdvm_y[bucket_idx][i] *
-                                         node_vel_y[bucket_idx][i] *
-                                         m_node_inv_mfhdvm_y[bucket_idx][i];
+        node_vel_y[bucket_idx][i] *
+        m_node_inv_mfhdvm_y[bucket_idx][i];
       node_fluid_vel_z[bucket_idx][i] += m_node_hdvm_z[bucket_idx][i] *
-                                         node_vel_z[bucket_idx][i] *
-                                         m_node_inv_mfhdvm_z[bucket_idx][i];
+        node_vel_z[bucket_idx][i] *
+        m_node_inv_mfhdvm_z[bucket_idx][i];
     }
   });
 }
 
 void LinearizedImplicitEuler::addSolidDragRHS(
-    TwoDScene& scene, const std::vector<VectorXs>& node_vel_x,
-    const std::vector<VectorXs>& node_vel_y,
-    const std::vector<VectorXs>& node_vel_z, std::vector<VectorXs>& node_rhs_x,
-    std::vector<VectorXs>& node_rhs_y, std::vector<VectorXs>& node_rhs_z) {
+  TwoDScene& scene, const std::vector<VectorXs>& node_vel_x,
+  const std::vector<VectorXs>& node_vel_y,
+  const std::vector<VectorXs>& node_vel_z, std::vector<VectorXs>& node_rhs_x,
+  std::vector<VectorXs>& node_rhs_y, std::vector<VectorXs>& node_rhs_z) {
   const Sorter& buckets = scene.getParticleBuckets();
 
   const std::vector<VectorXs>& node_mass_x = scene.getNodeMassX();
@@ -631,24 +631,24 @@ void LinearizedImplicitEuler::addSolidDragRHS(
 
     for (int i = 0; i < num_nodes; ++i) {
       node_rhs_x[bucket_idx][i] += m_node_mshdvm_hdvm_x[bucket_idx][i] *
-                                   node_mass_x[bucket_idx][i] *
-                                   node_vel_x[bucket_idx][i];
+        node_mass_x[bucket_idx][i] *
+        node_vel_x[bucket_idx][i];
       node_rhs_y[bucket_idx][i] += m_node_mshdvm_hdvm_y[bucket_idx][i] *
-                                   node_mass_y[bucket_idx][i] *
-                                   node_vel_y[bucket_idx][i];
+        node_mass_y[bucket_idx][i] *
+        node_vel_y[bucket_idx][i];
       node_rhs_z[bucket_idx][i] += m_node_mshdvm_hdvm_z[bucket_idx][i] *
-                                   node_mass_z[bucket_idx][i] *
-                                   node_vel_z[bucket_idx][i];
+        node_mass_z[bucket_idx][i] *
+        node_vel_z[bucket_idx][i];
     }
   });
 }
 
 void LinearizedImplicitEuler::addFluidDragRHS(
-    TwoDScene& scene, const std::vector<VectorXs>& node_fluid_vel_x,
-    const std::vector<VectorXs>& node_fluid_vel_y,
-    const std::vector<VectorXs>& node_fluid_vel_z,
-    std::vector<VectorXs>& node_rhs_x, std::vector<VectorXs>& node_rhs_y,
-    std::vector<VectorXs>& node_rhs_z) {
+  TwoDScene& scene, const std::vector<VectorXs>& node_fluid_vel_x,
+  const std::vector<VectorXs>& node_fluid_vel_y,
+  const std::vector<VectorXs>& node_fluid_vel_z,
+  std::vector<VectorXs>& node_rhs_x, std::vector<VectorXs>& node_rhs_y,
+  std::vector<VectorXs>& node_rhs_z) {
   const Sorter& buckets = scene.getParticleBuckets();
 
   const std::vector<VectorXs>& node_mass_fluid_x = scene.getNodeFluidMassX();
@@ -662,35 +662,35 @@ void LinearizedImplicitEuler::addFluidDragRHS(
 
     for (int i = 0; i < num_nodes; ++i) {
       node_rhs_x[bucket_idx][i] += m_node_mfhdvm_hdvm_x[bucket_idx][i] *
-                                   node_mass_fluid_x[bucket_idx][i] *
-                                   node_fluid_vel_x[bucket_idx][i];
+        node_mass_fluid_x[bucket_idx][i] *
+        node_fluid_vel_x[bucket_idx][i];
       node_rhs_y[bucket_idx][i] += m_node_mfhdvm_hdvm_y[bucket_idx][i] *
-                                   node_mass_fluid_y[bucket_idx][i] *
-                                   node_fluid_vel_y[bucket_idx][i];
+        node_mass_fluid_y[bucket_idx][i] *
+        node_fluid_vel_y[bucket_idx][i];
       node_rhs_z[bucket_idx][i] += m_node_mfhdvm_hdvm_z[bucket_idx][i] *
-                                   node_mass_fluid_z[bucket_idx][i] *
-                                   node_fluid_vel_z[bucket_idx][i];
+        node_mass_fluid_z[bucket_idx][i] *
+        node_fluid_vel_z[bucket_idx][i];
     }
   });
 }
 
 void LinearizedImplicitEuler::constructHessianPreProcess(TwoDScene& scene,
-                                                         const scalar& dt) {
+  const scalar& dt) {
   scene.accumulateddUdxdx(m_triA, dt, 0);
 
   m_triA.erase(
-      std::remove_if(m_triA.begin(), m_triA.end(),
-                     [](const auto& info) { return info.value() == 0.0; }),
-      m_triA.end());
+    std::remove_if(m_triA.begin(), m_triA.end(),
+      [](const auto& info) { return info.value() == 0.0; }),
+    m_triA.end());
 }
 
 void LinearizedImplicitEuler::constructHessianPostProcess(TwoDScene& scene,
-                                                          const scalar& dt) {
+  const scalar& dt) {
   const int num_soft_elasto = scene.getNumSoftElastoParticles();
 
   tbb::parallel_sort(
-      m_triA.begin(), m_triA.end(),
-      [](const Triplets& x, const Triplets& y) { return x.row() < y.row(); });
+    m_triA.begin(), m_triA.end(),
+    [](const Triplets& x, const Triplets& y) { return x.row() < y.row(); });
 
   if ((int)m_triA_sup.size() != num_soft_elasto * 4)
     m_triA_sup.resize(num_soft_elasto * 4);
@@ -707,7 +707,7 @@ void LinearizedImplicitEuler::constructHessianPostProcess(TwoDScene& scene,
     unsigned int cell = m_triA[G_ID].row();
     unsigned int cell_prev = G_ID_PREV < 0 ? -1U : m_triA[G_ID_PREV].row();
     unsigned int cell_next =
-        G_ID_NEXT >= num_tris ? -1U : m_triA[G_ID_NEXT].row();
+      G_ID_NEXT >= num_tris ? -1U : m_triA[G_ID_NEXT].row();
 
     if (cell != cell_prev) {
       m_triA_sup[cell].first = G_ID;
@@ -718,34 +718,31 @@ void LinearizedImplicitEuler::constructHessianPostProcess(TwoDScene& scene,
     }
   });
 
-  if (scene.getLiquidInfo().use_group_precondition) {
-    prepareGroupPrecondition(scene, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z, dt);
-  }
 }
 
 void LinearizedImplicitEuler::constructAngularHessianPreProcess(
-    TwoDScene& scene, const scalar& dt) {
+  TwoDScene& scene, const scalar& dt) {
   scene.accumulateAngularddUdxdx(m_angular_triA, dt, 0);
 
   m_angular_triA.erase(
-      std::remove_if(m_angular_triA.begin(), m_angular_triA.end(),
-                     [](const auto& info) { return info.value() == 0.0; }),
-      m_angular_triA.end());
+    std::remove_if(m_angular_triA.begin(), m_angular_triA.end(),
+      [](const auto& info) { return info.value() == 0.0; }),
+    m_angular_triA.end());
 }
 
 void LinearizedImplicitEuler::constructAngularHessianPostProcess(
-    TwoDScene& scene, const scalar&) {
+  TwoDScene& scene, const scalar&) {
   const int num_soft_elasto = scene.getNumSoftElastoParticles();
 
   tbb::parallel_sort(
-      m_angular_triA.begin(), m_angular_triA.end(),
-      [](const Triplets& x, const Triplets& y) { return x.row() < y.row(); });
+    m_angular_triA.begin(), m_angular_triA.end(),
+    [](const Triplets& x, const Triplets& y) { return x.row() < y.row(); });
 
   if ((int)m_angular_triA_sup.size() != num_soft_elasto)
     m_angular_triA_sup.resize(num_soft_elasto);
 
   memset(&m_angular_triA_sup[0], 0,
-         num_soft_elasto * sizeof(std::pair<int, int>));
+    num_soft_elasto * sizeof(std::pair<int, int>));
 
   const int num_tris = m_angular_triA.size();
 
@@ -756,9 +753,9 @@ void LinearizedImplicitEuler::constructAngularHessianPostProcess(
 
     unsigned int cell = m_angular_triA[G_ID].row();
     unsigned int cell_prev =
-        G_ID_PREV < 0 ? -1U : m_angular_triA[G_ID_PREV].row();
+      G_ID_PREV < 0 ? -1U : m_angular_triA[G_ID_PREV].row();
     unsigned int cell_next =
-        G_ID_NEXT >= num_tris ? -1U : m_angular_triA[G_ID_NEXT].row();
+      G_ID_NEXT >= num_tris ? -1U : m_angular_triA[G_ID_NEXT].row();
 
     if (cell != cell_prev) {
       m_angular_triA_sup[cell].first = G_ID;
@@ -813,46 +810,9 @@ void LinearizedImplicitEuler::constructHDV(TwoDScene& scene, const scalar& dt) {
 
   const Sorter& buckets = scene.getParticleBuckets();
 
-  if (scene.getLiquidInfo().drag_by_air) {
-    buckets.for_each_bucket([&](int bucket_idx) {
-      if (!scene.isBucketActivated(bucket_idx)) return;
-
-      const int num_nodes = scene.getNumNodes(bucket_idx);
-
-      for (int i = 0; i < num_nodes; ++i) {
-        scalar dc = scene.getDragCoeffWithOrientation(
-            node_psi_x[bucket_idx][i], 1.0, node_vel_x[bucket_idx][i],
-            orient_x[bucket_idx].segment<3>(i * 3),
-            shape_factor_x[bucket_idx][i], 0, 1);
-        scalar V_m = node_vol_x[bucket_idx][i];
-        scalar hdV = dt * dc * V_m;
-
-        m_node_damped_x[bucket_idx][i] = node_mass_x[bucket_idx][i] + hdV;
-
-        dc = scene.getDragCoeffWithOrientation(
-            node_psi_y[bucket_idx][i], 1.0, node_vel_y[bucket_idx][i],
-            orient_y[bucket_idx].segment<3>(i * 3),
-            shape_factor_y[bucket_idx][i], 1, 1);
-        V_m = node_vol_y[bucket_idx][i];
-        hdV = dt * dc * V_m;
-
-        m_node_damped_y[bucket_idx][i] = node_mass_y[bucket_idx][i] + hdV;
-
-        dc = scene.getDragCoeffWithOrientation(
-            node_psi_z[bucket_idx][i], 1.0, node_vel_z[bucket_idx][i],
-            orient_z[bucket_idx].segment<3>(i * 3),
-            shape_factor_z[bucket_idx][i], 2, 1);
-        V_m = node_vol_z[bucket_idx][i];
-        hdV = dt * dc * V_m;
-
-        m_node_damped_z[bucket_idx][i] = node_mass_z[bucket_idx][i] + hdV;
-      }
-    });
-  } else {
-    m_node_damped_x = node_mass_x;
-    m_node_damped_y = node_mass_y;
-    m_node_damped_z = node_mass_z;
-  }
+  m_node_damped_x = node_mass_x;
+  m_node_damped_y = node_mass_y;
+  m_node_damped_z = node_mass_z;
 
   buckets.for_each_bucket([&](int bucket_idx) {
     if (!scene.isBucketActivated(bucket_idx)) return;
@@ -862,10 +822,10 @@ void LinearizedImplicitEuler::constructHDV(TwoDScene& scene, const scalar& dt) {
     for (int i = 0; i < num_nodes; ++i) {
       scalar sat = node_sat_x[bucket_idx][i];
       scalar dc = scene.getDragCoeffWithOrientation(
-          node_psi_x[bucket_idx][i], sat,
-          node_vel_fluid_x[bucket_idx][i] - node_vel_x[bucket_idx][i],
-          orient_x[bucket_idx].segment<3>(i * 3), shape_factor_x[bucket_idx][i],
-          0, 0);
+        node_psi_x[bucket_idx][i], sat,
+        node_vel_fluid_x[bucket_idx][i] - node_vel_x[bucket_idx][i],
+        orient_x[bucket_idx].segment<3>(i * 3), shape_factor_x[bucket_idx][i],
+        0, 0);
       scalar V_m = node_vol_x[bucket_idx][i] + node_vol_fluid_x[bucket_idx][i];
       scalar hdV = dt * dc * V_m;
 
@@ -875,18 +835,18 @@ void LinearizedImplicitEuler::constructHDV(TwoDScene& scene, const scalar& dt) {
       scalar mshdvm = m_node_damped_x[bucket_idx][i] + hdV;
 
       m_node_inv_mfhdvm_x[bucket_idx][i] =
-          (mfhdvm > 1e-20) ? (1.0 / mfhdvm) : 1.0;
+        (mfhdvm > 1e-20) ? (1.0 / mfhdvm) : 1.0;
       m_node_mfhdvm_hdvm_x[bucket_idx][i] =
-          (mfhdvm > 1e-20) ? (hdV / mfhdvm) : 1.0;
+        (mfhdvm > 1e-20) ? (hdV / mfhdvm) : 1.0;
       m_node_mshdvm_hdvm_x[bucket_idx][i] =
-          (mshdvm > 1e-20) ? (hdV / mshdvm) : 1.0;
+        (mshdvm > 1e-20) ? (hdV / mshdvm) : 1.0;
 
       sat = node_sat_y[bucket_idx][i];
       dc = scene.getDragCoeffWithOrientation(
-          node_psi_y[bucket_idx][i], sat,
-          node_vel_fluid_y[bucket_idx][i] - node_vel_y[bucket_idx][i],
-          orient_y[bucket_idx].segment<3>(i * 3), shape_factor_y[bucket_idx][i],
-          1, 0);
+        node_psi_y[bucket_idx][i], sat,
+        node_vel_fluid_y[bucket_idx][i] - node_vel_y[bucket_idx][i],
+        orient_y[bucket_idx].segment<3>(i * 3), shape_factor_y[bucket_idx][i],
+        1, 0);
       V_m = node_vol_y[bucket_idx][i] + node_vol_fluid_y[bucket_idx][i];
       hdV = dt * dc * V_m;
 
@@ -896,18 +856,18 @@ void LinearizedImplicitEuler::constructHDV(TwoDScene& scene, const scalar& dt) {
       mshdvm = m_node_damped_y[bucket_idx][i] + hdV;
 
       m_node_inv_mfhdvm_y[bucket_idx][i] =
-          (mfhdvm > 1e-20) ? (1.0 / mfhdvm) : 1.0;
+        (mfhdvm > 1e-20) ? (1.0 / mfhdvm) : 1.0;
       m_node_mfhdvm_hdvm_y[bucket_idx][i] =
-          (mfhdvm > 1e-20) ? (hdV / mfhdvm) : 1.0;
+        (mfhdvm > 1e-20) ? (hdV / mfhdvm) : 1.0;
       m_node_mshdvm_hdvm_y[bucket_idx][i] =
-          (mshdvm > 1e-20) ? (hdV / mshdvm) : 1.0;
+        (mshdvm > 1e-20) ? (hdV / mshdvm) : 1.0;
 
       sat = node_sat_z[bucket_idx][i];
       dc = scene.getDragCoeffWithOrientation(
-          node_psi_z[bucket_idx][i], sat,
-          node_vel_fluid_z[bucket_idx][i] - node_vel_z[bucket_idx][i],
-          orient_z[bucket_idx].segment<3>(i * 3), shape_factor_z[bucket_idx][i],
-          2, 0);
+        node_psi_z[bucket_idx][i], sat,
+        node_vel_fluid_z[bucket_idx][i] - node_vel_z[bucket_idx][i],
+        orient_z[bucket_idx].segment<3>(i * 3), shape_factor_z[bucket_idx][i],
+        2, 0);
       V_m = node_vol_z[bucket_idx][i] + node_vol_fluid_z[bucket_idx][i];
       hdV = dt * dc * V_m;
 
@@ -917,11 +877,11 @@ void LinearizedImplicitEuler::constructHDV(TwoDScene& scene, const scalar& dt) {
       mshdvm = m_node_damped_z[bucket_idx][i] + hdV;
 
       m_node_inv_mfhdvm_z[bucket_idx][i] =
-          (mfhdvm > 1e-20) ? (1.0 / mfhdvm) : 1.0;
+        (mfhdvm > 1e-20) ? (1.0 / mfhdvm) : 1.0;
       m_node_mfhdvm_hdvm_z[bucket_idx][i] =
-          (mfhdvm > 1e-20) ? (hdV / mfhdvm) : 1.0;
+        (mfhdvm > 1e-20) ? (hdV / mfhdvm) : 1.0;
       m_node_mshdvm_hdvm_z[bucket_idx][i] =
-          (mshdvm > 1e-20) ? (hdV / mshdvm) : 1.0;
+        (mshdvm > 1e-20) ? (hdV / mshdvm) : 1.0;
     }
   });
 }
@@ -941,31 +901,34 @@ void LinearizedImplicitEuler::constructMsDVs(TwoDScene& scene) {
     for (int i = 0; i < num_nodes; ++i) {
       scalar P = m_node_mfhdvm_hdvm_x[bucket_idx][i];
       scalar Cs =
-          m_node_damped_x[bucket_idx][i] + P * node_mass_fluid_x[bucket_idx][i];
+        m_node_damped_x[bucket_idx][i] + P * node_mass_fluid_x[bucket_idx][i];
       m_node_Cs_x[bucket_idx][i] = Cs;
       if (Cs > 1e-20) {
         m_node_inv_Cs_x[bucket_idx][i] = 1.0 / Cs;
-      } else {
+      }
+      else {
         m_node_inv_Cs_x[bucket_idx][i] = 1.0;
       }
 
       P = m_node_mfhdvm_hdvm_y[bucket_idx][i];
       Cs =
-          m_node_damped_y[bucket_idx][i] + P * node_mass_fluid_y[bucket_idx][i];
+        m_node_damped_y[bucket_idx][i] + P * node_mass_fluid_y[bucket_idx][i];
       m_node_Cs_y[bucket_idx][i] = Cs;
       if (Cs > 1e-20) {
         m_node_inv_Cs_y[bucket_idx][i] = 1.0 / Cs;
-      } else {
+      }
+      else {
         m_node_inv_Cs_y[bucket_idx][i] = 1.0;
       }
 
       P = m_node_mfhdvm_hdvm_z[bucket_idx][i];
       Cs =
-          m_node_damped_z[bucket_idx][i] + P * node_mass_fluid_z[bucket_idx][i];
+        m_node_damped_z[bucket_idx][i] + P * node_mass_fluid_z[bucket_idx][i];
       m_node_Cs_z[bucket_idx][i] = Cs;
       if (Cs > 1e-20) {
         m_node_inv_Cs_z[bucket_idx][i] = 1.0 / Cs;
-      } else {
+      }
+      else {
         m_node_inv_Cs_z[bucket_idx][i] = 1.0;
       }
     }
@@ -998,37 +961,37 @@ void LinearizedImplicitEuler::constructPsiSF(TwoDScene& scene) {
 
     for (int i = 0; i < num_nodes; ++i) {
       m_node_psi_fs_x[bucket_idx][i] =
-          ((1.0 - node_psi_x[bucket_idx][i]) * m_node_inv_C_x[bucket_idx][i] +
-           node_psi_x[bucket_idx][i] * m_node_inv_Cs_x[bucket_idx][i] *
-               m_node_mfhdvm_hdvm_x[bucket_idx][i]) *
-          node_mass_fluid_x[bucket_idx][i];
+        ((1.0 - node_psi_x[bucket_idx][i]) * m_node_inv_C_x[bucket_idx][i] +
+          node_psi_x[bucket_idx][i] * m_node_inv_Cs_x[bucket_idx][i] *
+          m_node_mfhdvm_hdvm_x[bucket_idx][i]) *
+        node_mass_fluid_x[bucket_idx][i];
       m_node_psi_sf_x[bucket_idx][i] =
-          (node_psi_x[bucket_idx][i] * m_node_inv_Cs_x[bucket_idx][i] +
-           (1.0 - node_psi_x[bucket_idx][i]) * m_node_inv_C_x[bucket_idx][i] *
-               m_node_mshdvm_hdvm_x[bucket_idx][i]) *
-          node_mass_x[bucket_idx][i];
+        (node_psi_x[bucket_idx][i] * m_node_inv_Cs_x[bucket_idx][i] +
+          (1.0 - node_psi_x[bucket_idx][i]) * m_node_inv_C_x[bucket_idx][i] *
+          m_node_mshdvm_hdvm_x[bucket_idx][i]) *
+        node_mass_x[bucket_idx][i];
 
       m_node_psi_fs_y[bucket_idx][i] =
-          ((1.0 - node_psi_y[bucket_idx][i]) * m_node_inv_C_y[bucket_idx][i] +
-           node_psi_y[bucket_idx][i] * m_node_inv_Cs_y[bucket_idx][i] *
-               m_node_mfhdvm_hdvm_y[bucket_idx][i]) *
-          node_mass_fluid_y[bucket_idx][i];
+        ((1.0 - node_psi_y[bucket_idx][i]) * m_node_inv_C_y[bucket_idx][i] +
+          node_psi_y[bucket_idx][i] * m_node_inv_Cs_y[bucket_idx][i] *
+          m_node_mfhdvm_hdvm_y[bucket_idx][i]) *
+        node_mass_fluid_y[bucket_idx][i];
       m_node_psi_sf_y[bucket_idx][i] =
-          (node_psi_y[bucket_idx][i] * m_node_inv_Cs_y[bucket_idx][i] +
-           (1.0 - node_psi_y[bucket_idx][i]) * m_node_inv_C_y[bucket_idx][i] *
-               m_node_mshdvm_hdvm_y[bucket_idx][i]) *
-          node_mass_y[bucket_idx][i];
+        (node_psi_y[bucket_idx][i] * m_node_inv_Cs_y[bucket_idx][i] +
+          (1.0 - node_psi_y[bucket_idx][i]) * m_node_inv_C_y[bucket_idx][i] *
+          m_node_mshdvm_hdvm_y[bucket_idx][i]) *
+        node_mass_y[bucket_idx][i];
 
       m_node_psi_fs_z[bucket_idx][i] =
-          ((1.0 - node_psi_z[bucket_idx][i]) * m_node_inv_C_z[bucket_idx][i] +
-           node_psi_z[bucket_idx][i] * m_node_inv_Cs_z[bucket_idx][i] *
-               m_node_mfhdvm_hdvm_z[bucket_idx][i]) *
-          node_mass_fluid_z[bucket_idx][i];
+        ((1.0 - node_psi_z[bucket_idx][i]) * m_node_inv_C_z[bucket_idx][i] +
+          node_psi_z[bucket_idx][i] * m_node_inv_Cs_z[bucket_idx][i] *
+          m_node_mfhdvm_hdvm_z[bucket_idx][i]) *
+        node_mass_fluid_z[bucket_idx][i];
       m_node_psi_sf_z[bucket_idx][i] =
-          (node_psi_z[bucket_idx][i] * m_node_inv_Cs_z[bucket_idx][i] +
-           (1.0 - node_psi_z[bucket_idx][i]) * m_node_inv_C_z[bucket_idx][i] *
-               m_node_mshdvm_hdvm_z[bucket_idx][i]) *
-          node_mass_z[bucket_idx][i];
+        (node_psi_z[bucket_idx][i] * m_node_inv_Cs_z[bucket_idx][i] +
+          (1.0 - node_psi_z[bucket_idx][i]) * m_node_inv_C_z[bucket_idx][i] *
+          m_node_mshdvm_hdvm_z[bucket_idx][i]) *
+        node_mass_z[bucket_idx][i];
     }
   });
 }
@@ -1048,10 +1011,11 @@ void LinearizedImplicitEuler::constructInvMDV(TwoDScene& scene) {
     for (int i = 0; i < num_nodes; ++i) {
       scalar Q = m_node_mshdvm_hdvm_x[bucket_idx][i];
       scalar C =
-          node_mass_fluid_x[bucket_idx][i] + Q * m_node_damped_x[bucket_idx][i];
+        node_mass_fluid_x[bucket_idx][i] + Q * m_node_damped_x[bucket_idx][i];
       if (C > 1e-20) {
         m_node_inv_C_x[bucket_idx][i] = 1.0 / C;
-      } else {
+      }
+      else {
         m_node_inv_C_x[bucket_idx][i] = 1.0;
       }
 
@@ -1059,7 +1023,8 @@ void LinearizedImplicitEuler::constructInvMDV(TwoDScene& scene) {
       C = node_mass_fluid_y[bucket_idx][i] + Q * m_node_damped_y[bucket_idx][i];
       if (C > 1e-20) {
         m_node_inv_C_y[bucket_idx][i] = 1.0 / C;
-      } else {
+      }
+      else {
         m_node_inv_C_y[bucket_idx][i] = 1.0;
       }
 
@@ -1067,7 +1032,8 @@ void LinearizedImplicitEuler::constructInvMDV(TwoDScene& scene) {
       C = node_mass_fluid_z[bucket_idx][i] + Q * m_node_damped_z[bucket_idx][i];
       if (C > 1e-20) {
         m_node_inv_C_z[bucket_idx][i] = 1.0 / C;
-      } else {
+      }
+      else {
         m_node_inv_C_z[bucket_idx][i] = 1.0;
       }
     }
@@ -1075,14 +1041,14 @@ void LinearizedImplicitEuler::constructInvMDV(TwoDScene& scene) {
 }
 
 bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
-                                                            scalar dt) {
+  scalar dt) {
   int ndof_elasto = scene.getNumSoftElastoParticles() * 4;
   const Sorter& buckets = scene.getParticleBuckets();
 
   if (ndof_elasto == 0) return true;
 
   scalar res_norm_0 =
-      lengthNodeVectors(m_node_rhs_x, m_node_rhs_y, m_node_rhs_z);
+    lengthNodeVectors(m_node_rhs_x, m_node_rhs_y, m_node_rhs_z);
   scalar res_norm_1 = m_angular_moment_buffer.norm();
 
   if (res_norm_0 > m_pcg_criterion) {
@@ -1098,37 +1064,33 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
 
     // initial residual = b - Ax
     performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                          m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z,
-                          m_node_z_x, m_node_z_y, m_node_z_z);
+      m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z,
+      m_node_z_x, m_node_z_y, m_node_z_z);
 
     buckets.for_each_bucket([&](int bucket_idx) {
       m_node_z_x[bucket_idx] =
-          m_node_rhs_x[bucket_idx] - m_node_z_x[bucket_idx];
+        m_node_rhs_x[bucket_idx] - m_node_z_x[bucket_idx];
       m_node_z_y[bucket_idx] =
-          m_node_rhs_y[bucket_idx] - m_node_z_y[bucket_idx];
+        m_node_rhs_y[bucket_idx] - m_node_z_y[bucket_idx];
       m_node_z_z[bucket_idx] =
-          m_node_rhs_z[bucket_idx] - m_node_z_z[bucket_idx];
+        m_node_rhs_z[bucket_idx] - m_node_z_z[bucket_idx];
     });
 
     scalar res_norm =
-        lengthNodeVectors(m_node_z_x, m_node_z_y, m_node_z_z) / res_norm_0;
+      lengthNodeVectors(m_node_z_x, m_node_z_y, m_node_z_z) / res_norm_0;
 
     int iter = 0;
 
     if (res_norm < m_pcg_criterion) {
       std::cout << "[pcr total iter: " << iter << ", res: " << res_norm << "/"
-                << m_pcg_criterion << ", abs. res: " << (res_norm * res_norm_0)
-                << "/" << (m_pcg_criterion * res_norm_0) << "]" << std::endl;
-    } else {
+        << m_pcg_criterion << ", abs. res: " << (res_norm * res_norm_0)
+        << "/" << (m_pcg_criterion * res_norm_0) << "]" << std::endl;
+    }
+    else {
       // Solve Mr=z
-      if (scene.getLiquidInfo().use_group_precondition) {
-        performGroupedLocalSolve(scene, m_node_z_x, m_node_z_y, m_node_z_z,
-                                 m_node_r_x, m_node_r_y, m_node_r_z);
-      } else {
-        performInvLocalSolve(scene, m_node_z_x, m_node_z_y, m_node_z_z,
-                             m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
-                             m_node_r_x, m_node_r_y, m_node_r_z);
-      }
+      performInvLocalSolve(scene, m_node_z_x, m_node_z_y, m_node_z_z,
+        m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
+        m_node_r_x, m_node_r_y, m_node_r_z);
       // p = r
       buckets.for_each_bucket([&](int bucket_idx) {
         m_node_p_x[bucket_idx] = m_node_r_x[bucket_idx];
@@ -1145,31 +1107,26 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
 
       // w = Ar
       performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                            m_node_r_x, m_node_r_y, m_node_r_z, m_node_w_x,
-                            m_node_w_y, m_node_w_z);
+        m_node_r_x, m_node_r_y, m_node_r_z, m_node_w_x,
+        m_node_w_y, m_node_w_z);
 
       // rho = (r, w)
       scalar rho = dotNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z,
-                                  m_node_w_x, m_node_w_y, m_node_w_z);
+        m_node_w_x, m_node_w_y, m_node_w_z);
 
       // q = Ap
       performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                            m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
-                            m_node_q_y, m_node_q_z);
+        m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
+        m_node_q_y, m_node_q_z);
 
-      if (scene.getLiquidInfo().use_group_precondition) {
-        performGroupedLocalSolve(scene, m_node_q_x, m_node_q_y, m_node_q_z,
-                                 m_node_z_x, m_node_z_y, m_node_z_z);
-      } else {
-        // Mz=q
-        performInvLocalSolve(scene, m_node_q_x, m_node_q_y, m_node_q_z,
-                             m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
-                             m_node_z_x, m_node_z_y, m_node_z_z);
-      }
+      // Mz=q
+      performInvLocalSolve(scene, m_node_q_x, m_node_q_y, m_node_q_z,
+        m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
+        m_node_z_x, m_node_z_y, m_node_z_z);
 
       // alpha = rho / (q, z)
       scalar alpha = rho / dotNodeVectors(m_node_q_x, m_node_q_y, m_node_q_z,
-                                          m_node_z_x, m_node_z_y, m_node_z_z);
+        m_node_z_x, m_node_z_y, m_node_z_z);
 
       // x = x + alpha * p
       // r = r - alpha * z
@@ -1187,25 +1144,25 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
       });
 
       res_norm =
-          lengthNodeVectors(m_node_t_x, m_node_t_y, m_node_t_z) / res_norm_0;
+        lengthNodeVectors(m_node_t_x, m_node_t_y, m_node_t_z) / res_norm_0;
 
       const scalar rho_criterion =
-          (m_pcg_criterion * res_norm_0) * (m_pcg_criterion * res_norm_0);
+        (m_pcg_criterion * res_norm_0) * (m_pcg_criterion * res_norm_0);
 
       scalar rho_old, beta;
       for (; iter < m_maxiters && res_norm > m_pcg_criterion &&
-             rho > rho_criterion;
-           ++iter) {
+        rho > rho_criterion;
+        ++iter) {
         rho_old = rho;
 
         // w = Ar
         performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                              m_node_r_x, m_node_r_y, m_node_r_z, m_node_w_x,
-                              m_node_w_y, m_node_w_z);
+          m_node_r_x, m_node_r_y, m_node_r_z, m_node_w_x,
+          m_node_w_y, m_node_w_z);
 
         // rho = (r, w)
         rho = dotNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_node_w_x,
-                             m_node_w_y, m_node_w_z);
+          m_node_w_y, m_node_w_z);
 
         beta = rho / rho_old;
 
@@ -1213,34 +1170,28 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
         // q = beta * q + w
         buckets.for_each_bucket([&](int bucket_idx) {
           m_node_p_x[bucket_idx] =
-              m_node_r_x[bucket_idx] + m_node_p_x[bucket_idx] * beta;
+            m_node_r_x[bucket_idx] + m_node_p_x[bucket_idx] * beta;
           m_node_p_y[bucket_idx] =
-              m_node_r_y[bucket_idx] + m_node_p_y[bucket_idx] * beta;
+            m_node_r_y[bucket_idx] + m_node_p_y[bucket_idx] * beta;
           m_node_p_z[bucket_idx] =
-              m_node_r_z[bucket_idx] + m_node_p_z[bucket_idx] * beta;
+            m_node_r_z[bucket_idx] + m_node_p_z[bucket_idx] * beta;
           m_node_q_x[bucket_idx] =
-              m_node_w_x[bucket_idx] + m_node_q_x[bucket_idx] * beta;
+            m_node_w_x[bucket_idx] + m_node_q_x[bucket_idx] * beta;
           m_node_q_y[bucket_idx] =
-              m_node_w_y[bucket_idx] + m_node_q_y[bucket_idx] * beta;
+            m_node_w_y[bucket_idx] + m_node_q_y[bucket_idx] * beta;
           m_node_q_z[bucket_idx] =
-              m_node_w_z[bucket_idx] + m_node_q_z[bucket_idx] * beta;
+            m_node_w_z[bucket_idx] + m_node_q_z[bucket_idx] * beta;
         });
 
         // Mz = q
-        if (scene.getLiquidInfo().use_group_precondition) {
-          performGroupedLocalSolve(scene, m_node_q_x, m_node_q_y, m_node_q_z,
-                                   m_node_z_x, m_node_z_y, m_node_z_z);
-        } else {
-          // Mz=q
-          performInvLocalSolve(scene, m_node_q_x, m_node_q_y, m_node_q_z,
-                               m_node_inv_Cs_x, m_node_inv_Cs_y,
-                               m_node_inv_Cs_z, m_node_z_x, m_node_z_y,
-                               m_node_z_z);
-        }
+        performInvLocalSolve(scene, m_node_q_x, m_node_q_y, m_node_q_z,
+          m_node_inv_Cs_x, m_node_inv_Cs_y,
+          m_node_inv_Cs_z, m_node_z_x, m_node_z_y,
+          m_node_z_z);
 
         // alpha = rho / (q, z)
         alpha = rho / dotNodeVectors(m_node_q_x, m_node_q_y, m_node_q_z,
-                                     m_node_z_x, m_node_z_y, m_node_z_z);
+          m_node_z_x, m_node_z_y, m_node_z_z);
 
         // x = x + alpha * p
         // r = r - alpha * z
@@ -1258,26 +1209,26 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
         });
 
         res_norm =
-            lengthNodeVectors(m_node_t_x, m_node_t_y, m_node_t_z) / res_norm_0;
+          lengthNodeVectors(m_node_t_x, m_node_t_y, m_node_t_z) / res_norm_0;
         if (scene.getLiquidInfo().iteration_print_step > 0 &&
-            iter % scene.getLiquidInfo().iteration_print_step == 0)
+          iter % scene.getLiquidInfo().iteration_print_step == 0)
           std::cout << "[pcr total iter: " << iter << ", res: " << res_norm
-                    << "/" << m_pcg_criterion
-                    << ", abs. res: " << (res_norm * res_norm_0) << "/"
-                    << (m_pcg_criterion * res_norm_0)
-                    << ", rho: " << (rho / (res_norm_0 * res_norm_0)) << "/"
-                    << (rho_criterion / (res_norm_0 * res_norm_0))
-                    << ", abs. rho: " << rho << "/" << rho_criterion << "]"
-                    << std::endl;
+          << "/" << m_pcg_criterion
+          << ", abs. res: " << (res_norm * res_norm_0) << "/"
+          << (m_pcg_criterion * res_norm_0)
+          << ", rho: " << (rho / (res_norm_0 * res_norm_0)) << "/"
+          << (rho_criterion / (res_norm_0 * res_norm_0))
+          << ", abs. rho: " << rho << "/" << rho_criterion << "]"
+          << std::endl;
       }
 
       std::cout << "[pcr total iter: " << iter << ", res: " << res_norm << "/"
-                << m_pcg_criterion << ", abs. res: " << (res_norm * res_norm_0)
-                << "/" << (m_pcg_criterion * res_norm_0)
-                << ", rho: " << (rho / (res_norm_0 * res_norm_0)) << "/"
-                << (rho_criterion / (res_norm_0 * res_norm_0))
-                << ", abs. rho: " << rho << "/" << rho_criterion << "]"
-                << std::endl;
+        << m_pcg_criterion << ", abs. res: " << (res_norm * res_norm_0)
+        << "/" << (m_pcg_criterion * res_norm_0)
+        << ", rho: " << (rho / (res_norm_0 * res_norm_0)) << "/"
+        << (rho_criterion / (res_norm_0 * res_norm_0))
+        << ", abs. rho: " << rho << "/" << rho_criterion << "]"
+        << std::endl;
     }
   }
 
@@ -1302,7 +1253,7 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
     m_angular_t.setZero();
 
     performAngularGlobalMultiply(scene, dt, scene.getM(),
-                                 m_angular_v_plus_buffer, m_angular_z);
+      m_angular_v_plus_buffer, m_angular_z);
 
     m_angular_z = m_angular_moment_buffer - m_angular_z;
 
@@ -1312,10 +1263,11 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
 
     if (res_norm < m_pcg_criterion) {
       std::cout << "[angular pcr total iter: " << iter << ", res: " << res_norm
-                << "/" << m_pcg_criterion
-                << ", abs. res: " << (res_norm * res_norm_1) << "/"
-                << (m_pcg_criterion * res_norm_1) << "]" << std::endl;
-    } else {
+        << "/" << m_pcg_criterion
+        << ", abs. res: " << (res_norm * res_norm_1) << "/"
+        << (m_pcg_criterion * res_norm_1) << "]" << std::endl;
+    }
+    else {
       // Solve Mr=z
       performLocalSolveTwist(scene, m_angular_z, scene.getM(), m_angular_r);
 
@@ -1327,14 +1279,14 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
 
       // w = Ar
       performAngularGlobalMultiply(scene, dt, scene.getM(), m_angular_r,
-                                   m_angular_w);
+        m_angular_w);
 
       // rho = (r, w)
       scalar rho = m_angular_r.dot(m_angular_w);
 
       // q = Ap
       performAngularGlobalMultiply(scene, dt, scene.getM(), m_angular_p,
-                                   m_angular_q);
+        m_angular_q);
 
       // Mz=q
       performLocalSolveTwist(scene, m_angular_q, scene.getM(), m_angular_z);
@@ -1352,17 +1304,17 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
       res_norm = m_angular_t.norm() / res_norm_1;
 
       const scalar rho_criterion =
-          (m_pcg_criterion * res_norm_1) * (m_pcg_criterion * res_norm_1);
+        (m_pcg_criterion * res_norm_1) * (m_pcg_criterion * res_norm_1);
 
       scalar rho_old, beta;
       for (; iter < m_maxiters && res_norm > m_pcg_criterion &&
-             rho > rho_criterion;
-           ++iter) {
+        rho > rho_criterion;
+        ++iter) {
         rho_old = rho;
 
         // w = Ar
         performAngularGlobalMultiply(scene, dt, scene.getM(), m_angular_r,
-                                     m_angular_w);
+          m_angular_w);
 
         // rho = (r, w)
         rho = m_angular_r.dot(m_angular_w);
@@ -1390,25 +1342,25 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
         res_norm = m_angular_t.norm() / res_norm_1;
 
         if (scene.getLiquidInfo().iteration_print_step > 0 &&
-            iter % scene.getLiquidInfo().iteration_print_step == 0)
+          iter % scene.getLiquidInfo().iteration_print_step == 0)
           std::cout << "[angular pcr total iter: " << iter
-                    << ", res: " << res_norm << "/" << m_pcg_criterion
-                    << ", abs. res: " << (res_norm * res_norm_1) << "/"
-                    << (m_pcg_criterion * res_norm_1)
-                    << ", rho: " << (rho / (res_norm_1 * res_norm_1)) << "/"
-                    << (rho_criterion / (res_norm_1 * res_norm_1))
-                    << ", abs. rho: " << rho << "/" << rho_criterion << "]"
-                    << std::endl;
+          << ", res: " << res_norm << "/" << m_pcg_criterion
+          << ", abs. res: " << (res_norm * res_norm_1) << "/"
+          << (m_pcg_criterion * res_norm_1)
+          << ", rho: " << (rho / (res_norm_1 * res_norm_1)) << "/"
+          << (rho_criterion / (res_norm_1 * res_norm_1))
+          << ", abs. rho: " << rho << "/" << rho_criterion << "]"
+          << std::endl;
       }
 
       std::cout << "[angular pcr total iter: " << iter << ", res: " << res_norm
-                << "/" << m_pcg_criterion
-                << ", abs. res: " << (res_norm * res_norm_1) << "/"
-                << (m_pcg_criterion * res_norm_1)
-                << ", rho: " << (rho / (res_norm_1 * res_norm_1)) << "/"
-                << (rho_criterion / (res_norm_1 * res_norm_1))
-                << ", abs. rho: " << rho << "/" << rho_criterion << "]"
-                << std::endl;
+        << "/" << m_pcg_criterion
+        << ", abs. res: " << (res_norm * res_norm_1) << "/"
+        << (m_pcg_criterion * res_norm_1)
+        << ", rho: " << (rho / (res_norm_1 * res_norm_1)) << "/"
+        << (rho_criterion / (res_norm_1 * res_norm_1))
+        << ", abs. rho: " << rho << "/" << rho_criterion << "]"
+        << std::endl;
     }
   }
 
@@ -1416,12 +1368,12 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
 }
 
 void LinearizedImplicitEuler::performGroupedLocalSolve(
-    const TwoDScene& scene, const std::vector<VectorXs>& node_rhs_x,
-    const std::vector<VectorXs>& node_rhs_y,
-    const std::vector<VectorXs>& node_rhs_z,
-    std::vector<VectorXs>& out_node_vec_x,
-    std::vector<VectorXs>& out_node_vec_y,
-    std::vector<VectorXs>& out_node_vec_z) {
+  const TwoDScene& scene, const std::vector<VectorXs>& node_rhs_x,
+  const std::vector<VectorXs>& node_rhs_y,
+  const std::vector<VectorXs>& node_rhs_z,
+  std::vector<VectorXs>& out_node_vec_x,
+  std::vector<VectorXs>& out_node_vec_y,
+  std::vector<VectorXs>& out_node_vec_z) {
   const std::vector<VectorXi>& groups = scene.getSolveGroup();
 
   const int num_groups = (int)groups.size();
@@ -1451,13 +1403,13 @@ void LinearizedImplicitEuler::performGroupedLocalSolve(
   });
 
   mapSoftParticlesToNode(scene, out_node_vec_x, out_node_vec_y, out_node_vec_z,
-                         sol_buffer);
+    sol_buffer);
 }
 
 void LinearizedImplicitEuler::prepareGroupPrecondition(
-    const TwoDScene& scene, const std::vector<VectorXs>& node_m_x,
-    const std::vector<VectorXs>& node_m_y,
-    const std::vector<VectorXs>& node_m_z, const scalar& dt) {
+  const TwoDScene& scene, const std::vector<VectorXs>& node_m_x,
+  const std::vector<VectorXs>& node_m_y,
+  const std::vector<VectorXs>& node_m_z, const scalar& dt) {
   const std::vector<VectorXi>& groups = scene.getSolveGroup();
 
   const int num_groups = (int)groups.size();
@@ -1497,7 +1449,7 @@ void LinearizedImplicitEuler::prepareGroupPrecondition(
           if (q == finder.end()) continue;
 
           tri_sub_A.push_back(Triplets(p.second * 3 + r, q->second * 3 + s,
-                                       tri.value() * dt * dt));
+            tri.value() * dt * dt));
         }
       }
     }
@@ -1507,7 +1459,7 @@ void LinearizedImplicitEuler::prepareGroupPrecondition(
 
       for (int r = 0; r < 3; ++r) {
         tri_sub_A.push_back(
-            Triplets(i * 3 + r, i * 3 + r, mass_buffer[pidx * 4 + r]));
+          Triplets(i * 3 + r, i * 3 + r, mass_buffer[pidx * 4 + r]));
       }
     }
 
@@ -1515,12 +1467,12 @@ void LinearizedImplicitEuler::prepareGroupPrecondition(
     sub_A.setFromTriplets(tri_sub_A.begin(), tri_sub_A.end());
 
     m_group_preconditioners[igroup] =
-        std::make_shared<Eigen::SimplicialLDLT<SparseXs> >(sub_A);
+      std::make_shared<Eigen::SimplicialLDLT<SparseXs> >(sub_A);
   });
 }
 
 bool LinearizedImplicitEuler::stepImplicitElastoLagrangian(TwoDScene& scene,
-                                                           scalar dt) {
+  scalar dt) {
   int ndof_elasto = scene.getNumSoftElastoParticles() * 4;
   if (ndof_elasto == 0) return true;
 
@@ -1548,8 +1500,9 @@ bool LinearizedImplicitEuler::stepImplicitElastoLagrangian(TwoDScene& scene,
 
     if (res_norm < m_pcg_criterion) {
       std::cout << "[pcg total iter: " << iter << ", res: " << res_norm << "]"
-                << std::endl;
-    } else {
+        << std::endl;
+    }
+    else {
       performLocalSolve(scene, m_r, m, m_z);
 
       m_p = m_z;
@@ -1567,8 +1520,8 @@ bool LinearizedImplicitEuler::stepImplicitElastoLagrangian(TwoDScene& scene,
 
       scalar rho_old, beta;
       for (; iter < m_maxiters && res_norm > m_pcg_criterion &&
-             rho > m_pcg_criterion * res_norm_0;
-           ++iter) {
+        rho > m_pcg_criterion * res_norm_0;
+        ++iter) {
         rho_old = rho;
 
         performLocalSolve(scene, m_r, m, m_z);
@@ -1589,13 +1542,13 @@ bool LinearizedImplicitEuler::stepImplicitElastoLagrangian(TwoDScene& scene,
         res_norm = m_r.norm() / res_norm_0;
 
         if (scene.getLiquidInfo().iteration_print_step > 0 &&
-            iter % scene.getLiquidInfo().iteration_print_step == 0)
+          iter % scene.getLiquidInfo().iteration_print_step == 0)
           std::cout << "[pcg iter: " << iter << ", res: " << res_norm << "]"
-                    << std::endl;
+          << std::endl;
       }
 
       std::cout << "[pcg total iter: " << iter << ", res: " << res_norm << "]"
-                << std::endl;
+        << std::endl;
     }
   }
 
@@ -1604,12 +1557,12 @@ bool LinearizedImplicitEuler::stepImplicitElastoLagrangian(TwoDScene& scene,
 }
 
 bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCRCoSolve(
-    TwoDScene& scene, scalar dt) {
+  TwoDScene& scene, scalar dt) {
   return true;
 }
 
 bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
-    TwoDScene& scene, scalar dt) {
+  TwoDScene& scene, scalar dt) {
   const int num_elasto = scene.getNumSoftElastoParticles();
   const int ndof_elasto = num_elasto * 4;
   const Sorter& buckets = scene.getParticleBuckets();
@@ -1617,7 +1570,7 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
   if (ndof_elasto == 0) return true;
 
   scalar res_norm_0 = lengthNodeVectors(m_node_rhs_x, m_node_rhs_y,
-                                        m_node_rhs_z, m_angular_moment_buffer);
+    m_node_rhs_z, m_angular_moment_buffer);
 #ifdef PCG_VERBOSE
   std::cout << "[pcg total res0: " << res_norm_0 << "]" << std::endl;
 #endif
@@ -1642,24 +1595,24 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
     m_angular_q.setZero();
 
     performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                          m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z,
-                          m_node_r_x, m_node_r_y, m_node_r_z, scene.getM(),
-                          m_angular_v_plus_buffer, m_angular_r);
+      m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z,
+      m_node_r_x, m_node_r_y, m_node_r_z, scene.getM(),
+      m_angular_v_plus_buffer, m_angular_r);
 
     buckets.for_each_bucket([&](int bucket_idx) {
       m_node_r_x[bucket_idx] =
-          m_node_rhs_x[bucket_idx] - m_node_r_x[bucket_idx];
+        m_node_rhs_x[bucket_idx] - m_node_r_x[bucket_idx];
       m_node_r_y[bucket_idx] =
-          m_node_rhs_y[bucket_idx] - m_node_r_y[bucket_idx];
+        m_node_rhs_y[bucket_idx] - m_node_r_y[bucket_idx];
       m_node_r_z[bucket_idx] =
-          m_node_rhs_z[bucket_idx] - m_node_r_z[bucket_idx];
+        m_node_rhs_z[bucket_idx] - m_node_r_z[bucket_idx];
     });
 
     m_angular_r = m_angular_moment_buffer - m_angular_r;
 
     scalar res_norm =
-        lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_angular_r) /
-        res_norm_0;
+      lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_angular_r) /
+      res_norm_0;
 
 #ifdef PCG_VERBOSE
     std::cout << "[pcg total res: " << res_norm << "]" << std::endl;
@@ -1669,11 +1622,12 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
 
     if (res_norm < m_pcg_criterion) {
       std::cout << "[pcg total iter: " << iter << ", res: " << res_norm << "]"
-                << std::endl;
-    } else {
+        << std::endl;
+    }
+    else {
       performInvLocalSolve(scene, m_node_r_x, m_node_r_y, m_node_r_z,
-                           m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
-                           m_node_z_x, m_node_z_y, m_node_z_z);
+        m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
+        m_node_z_x, m_node_z_y, m_node_z_z);
 
       performLocalSolveTwist(scene, m_angular_r, scene.getM(), m_angular_z);
 
@@ -1686,17 +1640,17 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
       m_angular_p = m_angular_z;
 
       performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                            m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
-                            m_node_q_y, m_node_q_z, scene.getM(), m_angular_p,
-                            m_angular_q);
+        m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
+        m_node_q_y, m_node_q_z, scene.getM(), m_angular_p,
+        m_angular_q);
 
       scalar rho =
-          dotNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_node_z_x,
-                         m_node_z_y, m_node_z_z, m_angular_r, m_angular_z);
+        dotNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_node_z_x,
+          m_node_z_y, m_node_z_z, m_angular_r, m_angular_z);
 
       scalar alpha = rho / dotNodeVectors(m_node_p_x, m_node_p_y, m_node_p_z,
-                                          m_node_q_x, m_node_q_y, m_node_q_z,
-                                          m_angular_p, m_angular_q);
+        m_node_q_x, m_node_q_y, m_node_q_z,
+        m_angular_p, m_angular_q);
 
       buckets.for_each_bucket([&](int bucket_idx) {
         m_node_v_plus_x[bucket_idx] += m_node_p_x[bucket_idx] * alpha;
@@ -1711,45 +1665,45 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
       m_angular_r -= m_angular_q * alpha;
 
       res_norm =
-          lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_angular_r) /
-          res_norm_0;
+        lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_angular_r) /
+        res_norm_0;
 
       scalar rho_old, beta;
       for (; iter < m_maxiters && res_norm > m_pcg_criterion &&
-             rho > m_pcg_criterion * res_norm_0;
-           ++iter) {
+        rho > m_pcg_criterion * res_norm_0;
+        ++iter) {
         rho_old = rho;
 
         performInvLocalSolve(scene, m_node_r_x, m_node_r_y, m_node_r_z,
-                             m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
-                             m_node_z_x, m_node_z_y, m_node_z_z);
+          m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
+          m_node_z_x, m_node_z_y, m_node_z_z);
 
         performLocalSolveTwist(scene, m_angular_r, scene.getM(), m_angular_z);
 
         rho = dotNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_node_z_x,
-                             m_node_z_y, m_node_z_z, m_angular_r, m_angular_z);
+          m_node_z_y, m_node_z_z, m_angular_r, m_angular_z);
 
         beta = rho / rho_old;
 
         buckets.for_each_bucket([&](int bucket_idx) {
           m_node_p_x[bucket_idx] =
-              m_node_z_x[bucket_idx] + m_node_p_x[bucket_idx] * beta;
+            m_node_z_x[bucket_idx] + m_node_p_x[bucket_idx] * beta;
           m_node_p_y[bucket_idx] =
-              m_node_z_y[bucket_idx] + m_node_p_y[bucket_idx] * beta;
+            m_node_z_y[bucket_idx] + m_node_p_y[bucket_idx] * beta;
           m_node_p_z[bucket_idx] =
-              m_node_z_z[bucket_idx] + m_node_p_z[bucket_idx] * beta;
+            m_node_z_z[bucket_idx] + m_node_p_z[bucket_idx] * beta;
         });
 
         m_angular_p = m_angular_z + m_angular_p * beta;
 
         performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                              m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
-                              m_node_q_y, m_node_q_z, scene.getM(), m_angular_p,
-                              m_angular_q);
+          m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
+          m_node_q_y, m_node_q_z, scene.getM(), m_angular_p,
+          m_angular_q);
 
         alpha = rho / dotNodeVectors(m_node_p_x, m_node_p_y, m_node_p_z,
-                                     m_node_q_x, m_node_q_y, m_node_q_z,
-                                     m_angular_p, m_angular_q);
+          m_node_q_x, m_node_q_y, m_node_q_z,
+          m_angular_p, m_angular_q);
 
         buckets.for_each_bucket([&](int bucket_idx) {
           m_node_v_plus_x[bucket_idx] += m_node_p_x[bucket_idx] * alpha;
@@ -1764,17 +1718,17 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
         m_angular_r -= m_angular_q * alpha;
 
         res_norm =
-            lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_angular_r) /
-            res_norm_0;
+          lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_angular_r) /
+          res_norm_0;
 
         if (scene.getLiquidInfo().iteration_print_step > 0 &&
-            iter % scene.getLiquidInfo().iteration_print_step == 0)
+          iter % scene.getLiquidInfo().iteration_print_step == 0)
           std::cout << "[pcg iter: " << iter << ", res: " << res_norm << "]"
-                    << std::endl;
+          << std::endl;
       }
 
       std::cout << "[pcg total iter: " << iter << ", res: " << res_norm << "]"
-                << std::endl;
+        << std::endl;
     }
   }
 
@@ -1782,14 +1736,14 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
 }
 
 bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
-                                                            scalar dt) {
+  scalar dt) {
   int ndof_elasto = scene.getNumSoftElastoParticles() * 4;
   const Sorter& buckets = scene.getParticleBuckets();
 
   if (ndof_elasto == 0) return true;
 
   scalar res_norm_0 =
-      lengthNodeVectors(m_node_rhs_x, m_node_rhs_y, m_node_rhs_z);
+    lengthNodeVectors(m_node_rhs_x, m_node_rhs_y, m_node_rhs_z);
   scalar res_norm_1 = m_angular_moment_buffer.norm();
 
   if (res_norm_0 > m_pcg_criterion) {
@@ -1803,31 +1757,32 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
     allocateNodeVectors(scene, m_node_q_x, m_node_q_y, m_node_q_z);
 
     performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                          m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z,
-                          m_node_r_x, m_node_r_y, m_node_r_z);
+      m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z,
+      m_node_r_x, m_node_r_y, m_node_r_z);
 
     buckets.for_each_bucket([&](int bucket_idx) {
       m_node_r_x[bucket_idx] =
-          m_node_rhs_x[bucket_idx] - m_node_r_x[bucket_idx];
+        m_node_rhs_x[bucket_idx] - m_node_r_x[bucket_idx];
       m_node_r_y[bucket_idx] =
-          m_node_rhs_y[bucket_idx] - m_node_r_y[bucket_idx];
+        m_node_rhs_y[bucket_idx] - m_node_r_y[bucket_idx];
       m_node_r_z[bucket_idx] =
-          m_node_rhs_z[bucket_idx] - m_node_r_z[bucket_idx];
+        m_node_rhs_z[bucket_idx] - m_node_r_z[bucket_idx];
     });
 
     scalar res_norm =
-        lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z) / res_norm_0;
+      lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z) / res_norm_0;
 
     int iter = 0;
 
     if (res_norm < m_pcg_criterion) {
       std::cout << "[pcg total iter: " << iter << ", res: " << res_norm << "/"
-                << m_pcg_criterion << ", abs. res: " << (res_norm * res_norm_0)
-                << "/" << (m_pcg_criterion * res_norm_0) << "]" << std::endl;
-    } else {
+        << m_pcg_criterion << ", abs. res: " << (res_norm * res_norm_0)
+        << "/" << (m_pcg_criterion * res_norm_0) << "]" << std::endl;
+    }
+    else {
       performInvLocalSolve(scene, m_node_r_x, m_node_r_y, m_node_r_z,
-                           m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
-                           m_node_z_x, m_node_z_y, m_node_z_z);
+        m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
+        m_node_z_x, m_node_z_y, m_node_z_z);
 
       buckets.for_each_bucket([&](int bucket_idx) {
         m_node_p_x[bucket_idx] = m_node_z_x[bucket_idx];
@@ -1836,14 +1791,14 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
       });
 
       performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                            m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
-                            m_node_q_y, m_node_q_z);
+        m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
+        m_node_q_y, m_node_q_z);
 
       scalar rho = dotNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z,
-                                  m_node_z_x, m_node_z_y, m_node_z_z);
+        m_node_z_x, m_node_z_y, m_node_z_z);
 
       scalar alpha = rho / dotNodeVectors(m_node_p_x, m_node_p_y, m_node_p_z,
-                                          m_node_q_x, m_node_q_y, m_node_q_z);
+        m_node_q_x, m_node_q_y, m_node_q_z);
 
       buckets.for_each_bucket([&](int bucket_idx) {
         m_node_v_plus_x[bucket_idx] += m_node_p_x[bucket_idx] * alpha;
@@ -1855,41 +1810,41 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
       });
 
       res_norm =
-          lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z) / res_norm_0;
+        lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z) / res_norm_0;
 
       const scalar rho_criterion =
-          (m_pcg_criterion * res_norm_0) * (m_pcg_criterion * res_norm_0);
+        (m_pcg_criterion * res_norm_0) * (m_pcg_criterion * res_norm_0);
 
       scalar rho_old, beta;
       for (; iter < m_maxiters && res_norm > m_pcg_criterion &&
-             rho > rho_criterion;
-           ++iter) {
+        rho > rho_criterion;
+        ++iter) {
         rho_old = rho;
 
         performInvLocalSolve(scene, m_node_r_x, m_node_r_y, m_node_r_z,
-                             m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
-                             m_node_z_x, m_node_z_y, m_node_z_z);
+          m_node_inv_Cs_x, m_node_inv_Cs_y, m_node_inv_Cs_z,
+          m_node_z_x, m_node_z_y, m_node_z_z);
 
         rho = dotNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_node_z_x,
-                             m_node_z_y, m_node_z_z);
+          m_node_z_y, m_node_z_z);
 
         beta = rho / rho_old;
 
         buckets.for_each_bucket([&](int bucket_idx) {
           m_node_p_x[bucket_idx] =
-              m_node_z_x[bucket_idx] + m_node_p_x[bucket_idx] * beta;
+            m_node_z_x[bucket_idx] + m_node_p_x[bucket_idx] * beta;
           m_node_p_y[bucket_idx] =
-              m_node_z_y[bucket_idx] + m_node_p_y[bucket_idx] * beta;
+            m_node_z_y[bucket_idx] + m_node_p_y[bucket_idx] * beta;
           m_node_p_z[bucket_idx] =
-              m_node_z_z[bucket_idx] + m_node_p_z[bucket_idx] * beta;
+            m_node_z_z[bucket_idx] + m_node_p_z[bucket_idx] * beta;
         });
 
         performGlobalMultiply(scene, dt, m_node_Cs_x, m_node_Cs_y, m_node_Cs_z,
-                              m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
-                              m_node_q_y, m_node_q_z);
+          m_node_p_x, m_node_p_y, m_node_p_z, m_node_q_x,
+          m_node_q_y, m_node_q_z);
 
         alpha = rho / dotNodeVectors(m_node_p_x, m_node_p_y, m_node_p_z,
-                                     m_node_q_x, m_node_q_y, m_node_q_z);
+          m_node_q_x, m_node_q_y, m_node_q_z);
 
         buckets.for_each_bucket([&](int bucket_idx) {
           m_node_v_plus_x[bucket_idx] += m_node_p_x[bucket_idx] * alpha;
@@ -1901,27 +1856,27 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
         });
 
         res_norm =
-            lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z) / res_norm_0;
+          lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z) / res_norm_0;
 
         if (scene.getLiquidInfo().iteration_print_step > 0 &&
-            iter % scene.getLiquidInfo().iteration_print_step == 0)
+          iter % scene.getLiquidInfo().iteration_print_step == 0)
           std::cout << "[pcg total iter: " << iter << ", res: " << res_norm
-                    << "/" << m_pcg_criterion
-                    << ", abs. res: " << (res_norm * res_norm_0) << "/"
-                    << (m_pcg_criterion * res_norm_0)
-                    << ", rho: " << (rho / (res_norm_0 * res_norm_0)) << "/"
-                    << (rho_criterion / (res_norm_0 * res_norm_0))
-                    << ", abs. rho: " << rho << "/" << rho_criterion << "]"
-                    << std::endl;
+          << "/" << m_pcg_criterion
+          << ", abs. res: " << (res_norm * res_norm_0) << "/"
+          << (m_pcg_criterion * res_norm_0)
+          << ", rho: " << (rho / (res_norm_0 * res_norm_0)) << "/"
+          << (rho_criterion / (res_norm_0 * res_norm_0))
+          << ", abs. rho: " << rho << "/" << rho_criterion << "]"
+          << std::endl;
       }
 
       std::cout << "[pcg total iter: " << iter << ", res: " << res_norm << "/"
-                << m_pcg_criterion << ", abs. res: " << (res_norm * res_norm_0)
-                << "/" << (m_pcg_criterion * res_norm_0)
-                << ", rho: " << (rho / (res_norm_0 * res_norm_0)) << "/"
-                << (rho_criterion / (res_norm_0 * res_norm_0))
-                << ", abs. rho: " << rho << "/" << rho_criterion << "]"
-                << std::endl;
+        << m_pcg_criterion << ", abs. res: " << (res_norm * res_norm_0)
+        << "/" << (m_pcg_criterion * res_norm_0)
+        << ", rho: " << (rho / (res_norm_0 * res_norm_0)) << "/"
+        << (rho_criterion / (res_norm_0 * res_norm_0))
+        << ", abs. rho: " << rho << "/" << rho_criterion << "]"
+        << std::endl;
     }
   }
 
@@ -1942,7 +1897,7 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
     m_angular_q.setZero();
 
     performAngularGlobalMultiply(scene, dt, scene.getM(),
-                                 m_angular_v_plus_buffer, m_angular_r);
+      m_angular_v_plus_buffer, m_angular_r);
 
     m_angular_r = m_angular_moment_buffer - m_angular_r;
 
@@ -1952,16 +1907,17 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
 
     if (res_norm < m_pcg_criterion) {
       std::cout << "[angular pcg total iter: " << iter << ", res: " << res_norm
-                << "/" << m_pcg_criterion
-                << ", abs. res: " << (res_norm * res_norm_1) << "/"
-                << (m_pcg_criterion * res_norm_1) << "]" << std::endl;
-    } else {
+        << "/" << m_pcg_criterion
+        << ", abs. res: " << (res_norm * res_norm_1) << "/"
+        << (m_pcg_criterion * res_norm_1) << "]" << std::endl;
+    }
+    else {
       performLocalSolveTwist(scene, m_angular_r, scene.getM(), m_angular_z);
 
       m_angular_p = m_angular_z;
 
       performAngularGlobalMultiply(scene, dt, scene.getM(), m_angular_p,
-                                   m_angular_q);
+        m_angular_q);
 
       scalar rho = m_angular_r.dot(m_angular_z);
 
@@ -1973,12 +1929,12 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
       res_norm = m_angular_r.norm() / res_norm_1;
 
       const scalar rho_criterion =
-          (m_pcg_criterion * res_norm_1) * (m_pcg_criterion * res_norm_1);
+        (m_pcg_criterion * res_norm_1) * (m_pcg_criterion * res_norm_1);
 
       scalar rho_old, beta;
       for (; iter < m_maxiters && res_norm > m_pcg_criterion &&
-             rho > rho_criterion;
-           ++iter) {
+        rho > rho_criterion;
+        ++iter) {
         rho_old = rho;
 
         performLocalSolveTwist(scene, m_angular_r, scene.getM(), m_angular_z);
@@ -1990,7 +1946,7 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
         m_angular_p = m_angular_z + m_angular_p * beta;
 
         performAngularGlobalMultiply(scene, dt, scene.getM(), m_angular_p,
-                                     m_angular_q);
+          m_angular_q);
 
         alpha = rho / m_angular_p.dot(m_angular_q);
 
@@ -2000,25 +1956,25 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
         res_norm = m_angular_r.norm() / res_norm_1;
 
         if (scene.getLiquidInfo().iteration_print_step > 0 &&
-            iter % scene.getLiquidInfo().iteration_print_step == 0)
+          iter % scene.getLiquidInfo().iteration_print_step == 0)
           std::cout << "[angular pcg total iter: " << iter
-                    << ", res: " << res_norm << "/" << m_pcg_criterion
-                    << ", abs. res: " << (res_norm * res_norm_1) << "/"
-                    << (m_pcg_criterion * res_norm_1)
-                    << ", rho: " << (rho / (res_norm_1 * res_norm_1)) << "/"
-                    << (rho_criterion / (res_norm_1 * res_norm_1))
-                    << ", abs. rho: " << rho << "/" << rho_criterion << "]"
-                    << std::endl;
+          << ", res: " << res_norm << "/" << m_pcg_criterion
+          << ", abs. res: " << (res_norm * res_norm_1) << "/"
+          << (m_pcg_criterion * res_norm_1)
+          << ", rho: " << (rho / (res_norm_1 * res_norm_1)) << "/"
+          << (rho_criterion / (res_norm_1 * res_norm_1))
+          << ", abs. rho: " << rho << "/" << rho_criterion << "]"
+          << std::endl;
       }
 
       std::cout << "[angular pcg total iter: " << iter << ", res: " << res_norm
-                << "/" << m_pcg_criterion
-                << ", abs. res: " << (res_norm * res_norm_1) << "/"
-                << (m_pcg_criterion * res_norm_1)
-                << ", rho: " << (rho / (res_norm_1 * res_norm_1)) << "/"
-                << (rho_criterion / (res_norm_1 * res_norm_1))
-                << ", abs. rho: " << rho << "/" << rho_criterion << "]"
-                << std::endl;
+        << "/" << m_pcg_criterion
+        << ", abs. res: " << (res_norm * res_norm_1) << "/"
+        << (m_pcg_criterion * res_norm_1)
+        << ", rho: " << (rho / (res_norm_1 * res_norm_1)) << "/"
+        << (rho_criterion / (res_norm_1 * res_norm_1))
+        << ", abs. rho: " << rho << "/" << rho_criterion << "]"
+        << std::endl;
     }
   }
   return true;
@@ -2028,7 +1984,7 @@ bool LinearizedImplicitEuler::acceptVelocity(TwoDScene& scene) {
   const Sorter& buckets = scene.getParticleBuckets();
 
   if (scene.getLiquidInfo().solve_solid &&
-      scene.getNumSoftElastoParticles() > 0) {
+    scene.getNumSoftElastoParticles() > 0) {
     buckets.for_each_bucket([&](int bucket_idx) {
       scene.getNodeVelocityX()[bucket_idx] = m_node_v_plus_x[bucket_idx];
       scene.getNodeVelocityY()[bucket_idx] = m_node_v_plus_y[bucket_idx];
@@ -2044,11 +2000,11 @@ bool LinearizedImplicitEuler::acceptVelocity(TwoDScene& scene) {
   if (scene.getNumFluidParticles() > 0) {
     buckets.for_each_bucket([&](int bucket_idx) {
       scene.getNodeFluidVelocityX()[bucket_idx] =
-          m_node_v_fluid_plus_x[bucket_idx];
+        m_node_v_fluid_plus_x[bucket_idx];
       scene.getNodeFluidVelocityY()[bucket_idx] =
-          m_node_v_fluid_plus_y[bucket_idx];
+        m_node_v_fluid_plus_y[bucket_idx];
       scene.getNodeFluidVelocityZ()[bucket_idx] =
-          m_node_v_fluid_plus_z[bucket_idx];
+        m_node_v_fluid_plus_z[bucket_idx];
     });
   }
 
@@ -2056,13 +2012,13 @@ bool LinearizedImplicitEuler::acceptVelocity(TwoDScene& scene) {
 }
 
 bool LinearizedImplicitEuler::stepImplicitElastoAMGPCG(TwoDScene& scene,
-                                                       scalar dt) {
+  scalar dt) {
   int ndof_elasto = scene.getNumSoftElastoParticles() * 4;
 
   if (ndof_elasto == 0) return true;
 
   scalar res_norm_0 =
-      lengthNodeVectors(m_node_rhs_x, m_node_rhs_y, m_node_rhs_z);
+    lengthNodeVectors(m_node_rhs_x, m_node_rhs_y, m_node_rhs_z);
 
   if (res_norm_0 > m_pcg_criterion) {
     // construct Particle Hessian
@@ -2073,12 +2029,12 @@ bool LinearizedImplicitEuler::stepImplicitElastoAMGPCG(TwoDScene& scene,
 
     // construct W matrix
     buildLocalGlobalMapping(scene, m_node_global_indices_x,
-                            m_node_global_indices_y, m_node_global_indices_z,
-                            m_effective_node_indices, m_dof_ijk);
+      m_node_global_indices_y, m_node_global_indices_z,
+      m_effective_node_indices, m_dof_ijk);
 
     buildNodeToSoftParticlesMat(
-        scene, m_node_global_indices_x, m_node_global_indices_y,
-        m_node_global_indices_z, m_effective_node_indices, m_tri_W, m_W);
+      scene, m_node_global_indices_x, m_node_global_indices_y,
+      m_node_global_indices_z, m_effective_node_indices, m_tri_W, m_W);
 
     m_A = m_W.transpose() * m_A * m_W;
 
@@ -2098,18 +2054,18 @@ bool LinearizedImplicitEuler::stepImplicitElastoAMGPCG(TwoDScene& scene,
 
       const Vector3i& index = m_effective_node_indices[row_idx];
       switch (index(1)) {
-        case 0:
-          m_H.add_to_element(row_idx, row_idx, m_node_Cs_x[index[0]][index[2]]);
-          break;
-        case 1:
-          m_H.add_to_element(row_idx, row_idx, m_node_Cs_y[index[0]][index[2]]);
-          break;
-        case 2:
-          m_H.add_to_element(row_idx, row_idx, m_node_Cs_z[index[0]][index[2]]);
-          break;
-        default:
-          m_H.add_to_element(row_idx, row_idx, 1.0);
-          break;
+      case 0:
+        m_H.add_to_element(row_idx, row_idx, m_node_Cs_x[index[0]][index[2]]);
+        break;
+      case 1:
+        m_H.add_to_element(row_idx, row_idx, m_node_Cs_y[index[0]][index[2]]);
+        break;
+      case 2:
+        m_H.add_to_element(row_idx, row_idx, m_node_Cs_z[index[0]][index[2]]);
+        break;
+      default:
+        m_H.add_to_element(row_idx, row_idx, 1.0);
+        break;
       }
     });
 
@@ -2120,22 +2076,22 @@ bool LinearizedImplicitEuler::stepImplicitElastoAMGPCG(TwoDScene& scene,
     threadutils::for_each(0, system_size, [&](int nidx) {
       const Vector3i& index = m_effective_node_indices[nidx];
       switch (index(1)) {
-        case 0:
-          m_elasto_rhs[nidx] = m_node_rhs_x[index[0]][index[2]];
-          m_elasto_result[nidx] = 0.0;  // node_vel_x[index[0]][index[2]];
-          break;
-        case 1:
-          m_elasto_rhs[nidx] = m_node_rhs_y[index[0]][index[2]];
-          m_elasto_result[nidx] = 0.0;  // node_vel_y[index[0]][index[2]];
-          break;
-        case 2:
-          m_elasto_rhs[nidx] = m_node_rhs_z[index[0]][index[2]];
-          m_elasto_result[nidx] = 0.0;  // node_vel_z[index[0]][index[2]];
-          break;
-        default:
-          m_elasto_rhs[nidx] = 0.0;
-          m_elasto_result[nidx] = 0.0;
-          break;
+      case 0:
+        m_elasto_rhs[nidx] = m_node_rhs_x[index[0]][index[2]];
+        m_elasto_result[nidx] = 0.0;  // node_vel_x[index[0]][index[2]];
+        break;
+      case 1:
+        m_elasto_rhs[nidx] = m_node_rhs_y[index[0]][index[2]];
+        m_elasto_result[nidx] = 0.0;  // node_vel_y[index[0]][index[2]];
+        break;
+      case 2:
+        m_elasto_rhs[nidx] = m_node_rhs_z[index[0]][index[2]];
+        m_elasto_result[nidx] = 0.0;  // node_vel_z[index[0]][index[2]];
+        break;
+      default:
+        m_elasto_rhs[nidx] = 0.0;
+        m_elasto_result[nidx] = 0.0;
+        break;
       }
     });
 
@@ -2150,11 +2106,11 @@ bool LinearizedImplicitEuler::stepImplicitElastoAMGPCG(TwoDScene& scene,
     int iterations = 0;
 
     success = AMGPCGSolveSparse(m_H, m_elasto_rhs, m_elasto_result, m_dof_ijk,
-                                m_pcg_criterion, m_maxiters, tolerance,
-                                iterations, ni * 3, nj, nk);
+      m_pcg_criterion, m_maxiters, tolerance,
+      iterations, ni * 3, nj, nk);
 
     std::cout << "[amg pcg elasto total iter: " << iterations
-              << ", res: " << tolerance << "]" << std::endl;
+      << ", res: " << tolerance << "]" << std::endl;
 
     if (!success) {
       std::cout << "WARNING: AMG PCG solve failed!" << std::endl;
@@ -2169,17 +2125,17 @@ bool LinearizedImplicitEuler::stepImplicitElastoAMGPCG(TwoDScene& scene,
     threadutils::for_each(0, system_size, [&](int nidx) {
       const Vector3i& index = m_effective_node_indices[nidx];
       switch (index(1)) {
-        case 0:
-          m_node_v_plus_x[index[0]][index[2]] = m_elasto_result[nidx];
-          break;
-        case 1:
-          m_node_v_plus_y[index[0]][index[2]] = m_elasto_result[nidx];
-          break;
-        case 2:
-          m_node_v_plus_z[index[0]][index[2]] = m_elasto_result[nidx];
-          break;
-        default:
-          break;
+      case 0:
+        m_node_v_plus_x[index[0]][index[2]] = m_elasto_result[nidx];
+        break;
+      case 1:
+        m_node_v_plus_y[index[0]][index[2]] = m_elasto_result[nidx];
+        break;
+      case 2:
+        m_node_v_plus_z[index[0]][index[2]] = m_elasto_result[nidx];
+        break;
+      default:
+        break;
       }
     });
   }
@@ -2190,9 +2146,11 @@ bool LinearizedImplicitEuler::stepImplicitElastoAMGPCG(TwoDScene& scene,
 bool LinearizedImplicitEuler::stepImplicitElasto(TwoDScene& scene, scalar dt) {
   if (scene.getLiquidInfo().use_amgpcg_solid) {
     return stepImplicitElastoAMGPCG(scene, dt);
-  } else if (scene.getLiquidInfo().use_pcr) {
+  }
+  else if (scene.getLiquidInfo().use_pcr) {
     return stepImplicitElastoDiagonalPCR(scene, dt);
-  } else {
+  }
+  else {
     if (scene.getLiquidInfo().use_cosolve_angular)
       return stepImplicitElastoDiagonalPCGCoSolve(scene, dt);
     else
@@ -2257,7 +2215,7 @@ std::string LinearizedImplicitEuler::getName() const {
 }
 
 void LinearizedImplicitEuler::zeroFixedDoFs(const TwoDScene& scene,
-                                            VectorXs& vec) {
+  VectorXs& vec) {
   int nprts = scene.getNumParticles();
   threadutils::for_each(0, nprts, [&](int i) {
     if (scene.isFixed(i) & 1) vec.segment<3>(4 * i).setZero();
@@ -2313,7 +2271,7 @@ bool LinearizedImplicitEuler::manifoldPropagate(TwoDScene& scene, scalar dt) {
 
       threadutils::for_each(0, num_elasto_gauss, [&](int gidx) {
         F.segment<3>(gidx * 3) -=
-            dv_gauss.segment<3>(gidx * 4) / dt * fluid_m_gauss(gidx * 4);
+          dv_gauss.segment<3>(gidx * 4) / dt * fluid_m_gauss(gidx * 4);
 
         F.segment<3>(gidx * 3) *= (1.0 - vol_frac_gauss[gidx]);
 
@@ -2324,141 +2282,72 @@ bool LinearizedImplicitEuler::manifoldPropagate(TwoDScene& scene, scalar dt) {
         const scalar min_D = fluid_m_gauss(gidx * 4) / dt * 1e-3;
         const scalar vol_empty = vol_gauss(gidx) * (1.0 - vol_frac_gauss(gidx));
         const scalar s =
-            (vol_empty > 1e-20)
-                ? mathutils::clamp(fluid_vol_gauss(gidx) / vol_empty, 0.0, 1.0)
-                : 0.0;
+          (vol_empty > 1e-20)
+          ? mathutils::clamp(fluid_vol_gauss(gidx) / vol_empty, 0.0, 1.0)
+          : 0.0;
 
         const scalar D = std::max(
-            min_D,
-            scene.getPlanarDragCoeff(vol_frac_gauss(gidx), s, dv.norm(), 0));
+          min_D,
+          scene.getPlanarDragCoeff(vol_frac_gauss(gidx), s, dv.norm(), 0));
 
         if (D > 1e-20) F.segment<3>(gidx * 3) /= D;
       });
+      threadutils::for_each(0, num_elasto, [&](int pidx) {
+        if (particle_to_surfels[pidx] >= 0) return;
 
-      if (scene.propagateSolidVelocity()) {
-        threadutils::for_each(0, num_elasto, [&](int pidx) {
-          if (particle_to_surfels[pidx] >= 0) return;
+        const VectorXs& div = part_div[pidx];
+        const auto& pe = scene.getParticleEdges(pidx);
+        const int num_pe = pe.size();
 
-          const VectorXs& div = part_div[pidx];
-          const auto& pe = scene.getParticleEdges(pidx);
-          const int num_pe = pe.size();
+        scalar divF = 0.0;
+        scalar w = 0.0;
 
-          Vector3s divFV = Vector3s::Zero();
-          scalar divF = 0.0;
-          scalar w = 0.0;
+        for (int j = 0; j < num_pe; ++j) {
+          const int eidx = pe[j];
 
-          for (int j = 0; j < num_pe; ++j) {
-            const int eidx = pe[j];
+          const scalar coeff =
+            F.segment<3>(eidx * 3).dot(div.segment<3>(j * 3)) *
+            fluid_vol_gauss(eidx);
+          divF += coeff;
+          w += fluid_vol_gauss(eidx);
+        }
 
-            const scalar coeff =
-                F.segment<3>(eidx * 3).dot(div.segment<3>(j * 3)) *
-                fluid_vol_gauss(eidx);
-            divF += coeff;
-            divFV += v_gauss.segment<3>(eidx * 4) * coeff;
-            w += fluid_vol_gauss(eidx);
-          }
+        const auto& pf = scene.getParticleFaces(pidx);
+        const int num_pf = pf.size();
 
-          const auto& pf = scene.getParticleFaces(pidx);
-          const int num_pf = pf.size();
+        for (int j = 0; j < num_pf; ++j) {
+          const int fidx = pf[j].first;
+          const int gidx = fidx + num_edges;
 
-          for (int j = 0; j < num_pf; ++j) {
-            const int fidx = pf[j].first;
-            const int gidx = fidx + num_edges;
+          const scalar coeff =
+            F.segment<3>(gidx * 3).dot(div.segment<3>((j + num_pe) * 3)) *
+            fluid_vol_gauss(gidx);
+          divF += coeff;
+          w += fluid_vol_gauss(gidx);
+        }
 
-            const scalar coeff =
-                F.segment<3>(gidx * 3).dot(div.segment<3>((j + num_pe) * 3)) *
-                fluid_vol_gauss(gidx);
-            divF += coeff;
-            divFV += v_gauss.segment<3>(gidx * 4) * coeff;
-            w += fluid_vol_gauss(gidx);
-          }
+        if (w > 1e-20) {
+          divF /= w;
+        }
 
-          if (w > 1e-20) {
-            divF /= w;
-            divFV /= w;
-          }
+        const scalar old_m = elasto_m(pidx * 4) + fluid_m(pidx * 4);
 
-          const scalar old_m = elasto_m(pidx * 4) + fluid_m(pidx * 4);
+        const scalar new_fluid_vol = std::max(0.0, fv0(pidx) - subdt * divF);
 
-          const scalar new_fluid_vol = std::max(0.0, fv0(pidx) - subdt * divF);
+        fluid_vol(pidx) = new_fluid_vol;
 
-          fluid_vol(pidx) = new_fluid_vol;
+        const scalar new_fluid_m =
+          new_fluid_vol * scene.getLiquidInfo().liquid_density;
 
-          const scalar new_fluid_m =
-              new_fluid_vol * scene.getLiquidInfo().liquid_density;
+        const scalar new_m = elasto_m(pidx * 4) + new_fluid_m;
 
-          const scalar new_m = elasto_m(pidx * 4) + new_fluid_m;
+        fluid_m.segment<3>(pidx * 4).setConstant(new_fluid_m);
 
-          fluid_m.segment<3>(pidx * 4).setConstant(new_fluid_m);
-
-          const Vector3s old_inertia = old_m * elasto_v.segment<3>(pidx * 4);
-
-          const Vector3s new_inertia =
-              old_inertia -
-              subdt * divFV * scene.getLiquidInfo().liquid_density;
-
-          if (new_m > 1e-20) {
-            elasto_v.segment<3>(pidx * 4) = new_inertia / new_m;
-          }
-        });
-      } else {
-        threadutils::for_each(0, num_elasto, [&](int pidx) {
-          if (particle_to_surfels[pidx] >= 0) return;
-
-          const VectorXs& div = part_div[pidx];
-          const auto& pe = scene.getParticleEdges(pidx);
-          const int num_pe = pe.size();
-
-          scalar divF = 0.0;
-          scalar w = 0.0;
-
-          for (int j = 0; j < num_pe; ++j) {
-            const int eidx = pe[j];
-
-            const scalar coeff =
-                F.segment<3>(eidx * 3).dot(div.segment<3>(j * 3)) *
-                fluid_vol_gauss(eidx);
-            divF += coeff;
-            w += fluid_vol_gauss(eidx);
-          }
-
-          const auto& pf = scene.getParticleFaces(pidx);
-          const int num_pf = pf.size();
-
-          for (int j = 0; j < num_pf; ++j) {
-            const int fidx = pf[j].first;
-            const int gidx = fidx + num_edges;
-
-            const scalar coeff =
-                F.segment<3>(gidx * 3).dot(div.segment<3>((j + num_pe) * 3)) *
-                fluid_vol_gauss(gidx);
-            divF += coeff;
-            w += fluid_vol_gauss(gidx);
-          }
-
-          if (w > 1e-20) {
-            divF /= w;
-          }
-
-          const scalar old_m = elasto_m(pidx * 4) + fluid_m(pidx * 4);
-
-          const scalar new_fluid_vol = std::max(0.0, fv0(pidx) - subdt * divF);
-
-          fluid_vol(pidx) = new_fluid_vol;
-
-          const scalar new_fluid_m =
-              new_fluid_vol * scene.getLiquidInfo().liquid_density;
-
-          const scalar new_m = elasto_m(pidx * 4) + new_fluid_m;
-
-          fluid_m.segment<3>(pidx * 4).setConstant(new_fluid_m);
-
-          if (new_m > 1e-20) {
-            const scalar prop = mathutils::clamp(old_m / new_m, 0.0, 1.0);
-            elasto_v.segment<4>(pidx * 4) *= prop;
-          }
-        });
-      }
+        if (new_m > 1e-20) {
+          const scalar prop = mathutils::clamp(old_m / new_m, 0.0, 1.0);
+          elasto_v.segment<4>(pidx * 4) *= prop;
+        }
+      });
 
       scalar old_sum_fv = old_fv.segment(0, num_elasto).sum();
       if (old_sum_fv > 1e-20) {
@@ -2473,9 +2362,9 @@ bool LinearizedImplicitEuler::manifoldPropagate(TwoDScene& scene, scalar dt) {
       scene.updateGaussAccel();
 
       res_norm =
-          (fluid_vol.segment(0, num_elasto) - old_fv.segment(0, num_elasto))
-              .norm() /
-          res_0;
+        (fluid_vol.segment(0, num_elasto) - old_fv.segment(0, num_elasto))
+        .norm() /
+        res_0;
     }
 
     total_iter += iter;
@@ -2483,9 +2372,9 @@ bool LinearizedImplicitEuler::manifoldPropagate(TwoDScene& scene, scalar dt) {
   }
 
   std::cout << "[manifold propagate avg iter: "
-            << ((scalar)total_iter / (scalar)m_manifold_substeps)
-            << ", avg res: " << sqrt(total_res / (scalar)m_manifold_substeps)
-            << "]" << std::endl;
+    << ((scalar)total_iter / (scalar)m_manifold_substeps)
+    << ", avg res: " << sqrt(total_res / (scalar)m_manifold_substeps)
+    << "]" << std::endl;
 
   return true;
 }
