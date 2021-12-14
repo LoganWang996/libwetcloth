@@ -60,7 +60,7 @@ class TwoDSceneXMLParser {
                               rapidxml::xml_node<>* node,
                               const std::string& input_bin);
 
-  void loadLiquidInfo(rapidxml::xml_node<>* node,
+  void loadSimInfo(rapidxml::xml_node<>* node,
                       const std::shared_ptr<TwoDScene>& twodscene);
 
   void loadXMLFile(const std::string& filename, std::vector<char>& xmlchars,

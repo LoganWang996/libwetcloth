@@ -93,7 +93,7 @@ class ParticleSimulation {
 
   void printDDA();
 
-  const LiquidInfo& getLiquidInfo();
+  const SimInfo& getSimInfo();
 
  private:
   std::shared_ptr<WetClothCore> m_core;

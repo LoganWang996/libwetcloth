@@ -27,10 +27,9 @@
 /*!
  * Outputting parameters for debugging
  */
-std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
+std::ostream& operator<<(std::ostream& os, const SimInfo& info) {
   os << "rest volume fraction: " << info.rest_volume_fraction << std::endl;
   os << "lambda: " << info.lambda << std::endl;
-  os << "flip coeff: " << info.flip_coeff << std::endl;
   os << "elasto flip stretching coeff: " << info.elasto_flip_coeff << std::endl;
   os << "elasto flip-asym coeff: " << info.elasto_flip_asym_coeff << std::endl;
   os << "elasto advection coeff: " << info.elasto_advect_coeff << std::endl;
@@ -2235,7 +2234,7 @@ const std::vector<VectorXs>& TwoDScene::getNodeSolidVelZ() const {
   return m_node_solid_vel_z;
 }
 
-void TwoDScene::setLiquidInfo(const LiquidInfo& info) { m_liquid_info = info; }
+void TwoDScene::setSimInfo(const SimInfo& info) { m_liquid_info = info; }
 
 const std::vector<VectorXs>& TwoDScene::getNodePorePressureP() const {
   return m_node_pore_pressure_p;
@@ -3369,9 +3368,9 @@ void TwoDScene::initGroupPos() {
   }
 }
 
-LiquidInfo& TwoDScene::getLiquidInfo() { return m_liquid_info; }
+SimInfo& TwoDScene::getSimInfo() { return m_liquid_info; }
 
-const LiquidInfo& TwoDScene::getLiquidInfo() const { return m_liquid_info; }
+const SimInfo& TwoDScene::getSimInfo() const { return m_liquid_info; }
 
 const std::vector<int>& TwoDScene::getFluidIndices() const { return m_fluids; }
 

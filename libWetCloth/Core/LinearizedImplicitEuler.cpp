@@ -255,7 +255,7 @@ bool LinearizedImplicitEuler::stepVelocity(TwoDScene& scene, scalar dt) {
   allocateNodeVectors(scene, m_node_v_plus_x, m_node_v_plus_y, m_node_v_plus_z);
 
   // construct u_s^*
-  if (ndof_elasto > 0 && scene.getLiquidInfo().solve_solid) {
+  if (ndof_elasto > 0 && scene.getSimInfo().solve_solid) {
     constructMsDVs(scene);
 
     const std::vector<VectorXs>& node_mass_x = scene.getNodeMassX();
@@ -507,7 +507,7 @@ void LinearizedImplicitEuler::constructNodeForce(
 
   m_angular_moment_buffer.resize(num_elasto);
 
-  if (scene.getLiquidInfo().solve_solid) {
+  if (scene.getSimInfo().solve_solid) {
     scene.accumulateGradU(rhs);
     rhs *= -dt;
 
@@ -527,7 +527,7 @@ void LinearizedImplicitEuler::constructNodeForce(
   ////////    // add grad pp to rhs (removed)
 
 
-  if (scene.getLiquidInfo().solve_solid) {
+  if (scene.getSimInfo().solve_solid) {
     MatrixXs rhs_gauss(scene.getNumGausses() * 3, 3);
     rhs_gauss.setZero();
     scene.accumulateGaussGradU(rhs_gauss);  // force for type 3.
@@ -540,7 +540,7 @@ void LinearizedImplicitEuler::constructNodeForce(
   const Sorter& buckets = scene.getParticleBuckets();
 
   buckets.for_each_bucket([&](int bucket_idx) {
-    if (scene.getLiquidInfo().solve_solid) {
+    if (scene.getSimInfo().solve_solid) {
       const VectorXs& node_masses_x = scene.getNodeMassX()[bucket_idx];
       const VectorXs& node_masses_y = scene.getNodeMassY()[bucket_idx];
       const VectorXs& node_masses_z = scene.getNodeMassZ()[bucket_idx];
@@ -1198,8 +1198,8 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
 
         res_norm =
           lengthNodeVectors(m_node_t_x, m_node_t_y, m_node_t_z) / res_norm_0;
-        if (scene.getLiquidInfo().iteration_print_step > 0 &&
-          iter % scene.getLiquidInfo().iteration_print_step == 0)
+        if (scene.getSimInfo().iteration_print_step > 0 &&
+          iter % scene.getSimInfo().iteration_print_step == 0)
           std::cout << "[pcr total iter: " << iter << ", res: " << res_norm
           << "/" << m_pcg_criterion
           << ", abs. res: " << (res_norm * res_norm_0) << "/"
@@ -1329,8 +1329,8 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCR(TwoDScene& scene,
 
         res_norm = m_angular_t.norm() / res_norm_1;
 
-        if (scene.getLiquidInfo().iteration_print_step > 0 &&
-          iter % scene.getLiquidInfo().iteration_print_step == 0)
+        if (scene.getSimInfo().iteration_print_step > 0 &&
+          iter % scene.getSimInfo().iteration_print_step == 0)
           std::cout << "[angular pcr total iter: " << iter
           << ", res: " << res_norm << "/" << m_pcg_criterion
           << ", abs. res: " << (res_norm * res_norm_1) << "/"
@@ -1529,8 +1529,8 @@ bool LinearizedImplicitEuler::stepImplicitElastoLagrangian(TwoDScene& scene,
 
         res_norm = m_r.norm() / res_norm_0;
 
-        if (scene.getLiquidInfo().iteration_print_step > 0 &&
-          iter % scene.getLiquidInfo().iteration_print_step == 0)
+        if (scene.getSimInfo().iteration_print_step > 0 &&
+          iter % scene.getSimInfo().iteration_print_step == 0)
           std::cout << "[pcg iter: " << iter << ", res: " << res_norm << "]"
           << std::endl;
       }
@@ -1709,8 +1709,8 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCGCoSolve(
           lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z, m_angular_r) /
           res_norm_0;
 
-        if (scene.getLiquidInfo().iteration_print_step > 0 &&
-          iter % scene.getLiquidInfo().iteration_print_step == 0)
+        if (scene.getSimInfo().iteration_print_step > 0 &&
+          iter % scene.getSimInfo().iteration_print_step == 0)
           std::cout << "[pcg iter: " << iter << ", res: " << res_norm << "]"
           << std::endl;
       }
@@ -1846,8 +1846,8 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
         res_norm =
           lengthNodeVectors(m_node_r_x, m_node_r_y, m_node_r_z) / res_norm_0;
 
-        if (scene.getLiquidInfo().iteration_print_step > 0 &&
-          iter % scene.getLiquidInfo().iteration_print_step == 0)
+        if (scene.getSimInfo().iteration_print_step > 0 &&
+          iter % scene.getSimInfo().iteration_print_step == 0)
           std::cout << "[pcg total iter: " << iter << ", res: " << res_norm
           << "/" << m_pcg_criterion
           << ", abs. res: " << (res_norm * res_norm_0) << "/"
@@ -1943,8 +1943,8 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
 
         res_norm = m_angular_r.norm() / res_norm_1;
 
-        if (scene.getLiquidInfo().iteration_print_step > 0 &&
-          iter % scene.getLiquidInfo().iteration_print_step == 0)
+        if (scene.getSimInfo().iteration_print_step > 0 &&
+          iter % scene.getSimInfo().iteration_print_step == 0)
           std::cout << "[angular pcg total iter: " << iter
           << ", res: " << res_norm << "/" << m_pcg_criterion
           << ", abs. res: " << (res_norm * res_norm_1) << "/"
@@ -1971,7 +1971,7 @@ bool LinearizedImplicitEuler::stepImplicitElastoDiagonalPCG(TwoDScene& scene,
 bool LinearizedImplicitEuler::acceptVelocity(TwoDScene& scene) {
   const Sorter& buckets = scene.getParticleBuckets();
 
-  if (scene.getLiquidInfo().solve_solid &&
+  if (scene.getSimInfo().solve_solid &&
     scene.getNumSoftElastoParticles() > 0) {
     buckets.for_each_bucket([&](int bucket_idx) {
       scene.getNodeVelocityX()[bucket_idx] = m_node_v_plus_x[bucket_idx];
@@ -2132,14 +2132,14 @@ bool LinearizedImplicitEuler::stepImplicitElastoAMGPCG(TwoDScene& scene,
 }
 
 bool LinearizedImplicitEuler::stepImplicitElasto(TwoDScene& scene, scalar dt) {
-  if (scene.getLiquidInfo().use_amgpcg_solid) {
+  if (scene.getSimInfo().use_amgpcg_solid) {
     return stepImplicitElastoAMGPCG(scene, dt);
   }
-  else if (scene.getLiquidInfo().use_pcr) {
+  else if (scene.getSimInfo().use_pcr) {
     return stepImplicitElastoDiagonalPCR(scene, dt);
   }
   else {
-    if (scene.getLiquidInfo().use_cosolve_angular)
+    if (scene.getSimInfo().use_cosolve_angular)
       return stepImplicitElastoDiagonalPCGCoSolve(scene, dt);
     else
       return stepImplicitElastoDiagonalPCG(scene, dt);

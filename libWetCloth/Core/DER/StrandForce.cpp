@@ -146,7 +146,7 @@ void StrandForce::updateStartState() {
   const int num_verts = getNumVertices();
   for (int i = 0; i < num_verts; ++i) {
     m_packing_fraction[i] =
-        pow(psi[m_verts[i]], m_scene->getLiquidInfo().lambda);
+        pow(psi[m_verts[i]], m_scene->getSimInfo().lambda);
   }
 }
 

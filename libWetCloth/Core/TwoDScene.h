@@ -32,11 +32,10 @@ enum ParticleClassifier { PC_NONE, PC_S, PC_s, PC_o, PC_l, PC_L };
 
 enum NODE_STATE { NS_NONE, NS_FLUID, NS_SOLID };
 
-struct LiquidInfo {
+struct SimInfo {
   scalar yazdchi_power;
   scalar rest_volume_fraction;
   scalar lambda;
-  scalar flip_coeff;
   scalar elasto_flip_asym_coeff;
   scalar elasto_flip_coeff;
   scalar elasto_advect_coeff;
@@ -48,10 +47,10 @@ struct LiquidInfo {
   bool use_lagrangian_mpm;
   bool use_cosolve_angular;
 
-  friend std::ostream& operator<<(std::ostream&, const LiquidInfo&);
+  friend std::ostream& operator<<(std::ostream&, const SimInfo&);
 };
 
-std::ostream& operator<<(std::ostream&, const LiquidInfo&);
+std::ostream& operator<<(std::ostream&, const SimInfo&);
 
 struct RayTriInfo {
   int start_geo_id;
@@ -118,9 +117,9 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   VectorXs& getFluidVol();
 
-  LiquidInfo& getLiquidInfo();
+  SimInfo& getSimInfo();
 
-  const LiquidInfo& getLiquidInfo() const;
+  const SimInfo& getSimInfo() const;
 
   const std::vector<VectorXs>& getParticleDiv() const;
 
@@ -473,7 +472,7 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   void setPosition(int particle, const Vector3s& pos);
 
-  void setLiquidInfo(const LiquidInfo& info);
+  void setSimInfo(const SimInfo& info);
 
   void setTheta(int particle, const scalar theta);
 
@@ -1095,7 +1094,7 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   std::vector<MatrixXi> m_gauss_bucket_neighbors;
 
-  LiquidInfo m_liquid_info;
+  SimInfo m_liquid_info;
 
   // Forces. Note that the scene inherits responsibility for deleting forces.
   std::vector<std::shared_ptr<Force> > m_forces;

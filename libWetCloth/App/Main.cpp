@@ -623,7 +623,7 @@ int main(int argc, char** argv) {
 
   std::cout << outputmod::startblue
     << "Global Parameters: " << outputmod::endblue << std::endl
-    << g_executable_simulation->getLiquidInfo() << std::endl;
+    << g_executable_simulation->getSimInfo() << std::endl;
 #ifdef RENDER_ENABLED
   if (g_rendering_enabled)
     glutMainLoop();

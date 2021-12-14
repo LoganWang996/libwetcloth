@@ -117,7 +117,7 @@ void TwoDSceneXMLParser::loadParticleSimulation(
   assert(dt > 0.0);
 
   // Scene
-  loadLiquidInfo(node, scene);
+  loadSimInfo(node, scene);
   loadBucketInfo(node, scene);
 
   int mg_part, mg_df;
@@ -1059,7 +1059,7 @@ void TwoDSceneXMLParser::loadHairs(rapidxml::xml_node<>* node,
             particle_indices[i], original_mass + mass,
             0.25 * mass * (radius_A * radius_A + radius_B * radius_B));
         twodscene->setTwist(particle_indices[i],
-                            twodscene->getLiquidInfo().use_twist);
+                            twodscene->getSimInfo().use_twist);
 
         twodscene->setVolumeFraction(particle_indices[i],
           params->m_restVolumeFraction);
@@ -1126,7 +1126,7 @@ void TwoDSceneXMLParser::loadHairs(rapidxml::xml_node<>* node,
             particle_indices[i], original_mass + mass,
             0.25 * mass * (radius_A * radius_A + radius_B * radius_B));
         twodscene->setTwist(particle_indices[i],
-                            twodscene->getLiquidInfo().use_twist);
+                            twodscene->getSimInfo().use_twist);
 
         twodscene->setVolumeFraction(particle_indices[i],
           params->m_restVolumeFraction);
@@ -1167,13 +1167,12 @@ void TwoDSceneXMLParser::loadHairs(rapidxml::xml_node<>* node,
   }
 }
 
-void TwoDSceneXMLParser::loadLiquidInfo(
+void TwoDSceneXMLParser::loadSimInfo(
     rapidxml::xml_node<>* node, const std::shared_ptr<TwoDScene>& twodscene) {
-  LiquidInfo info;
+  SimInfo info;
   info.yazdchi_power = 1.6;
   info.rest_volume_fraction = 0.4;
   info.lambda = 2.0;
-  info.flip_coeff = 0.996;
   info.elasto_flip_asym_coeff = 0.996;
   info.elasto_flip_coeff = 0.0;
   info.elasto_advect_coeff = 0.996;
@@ -1185,7 +1184,7 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.use_cosolve_angular = false;
   info.iteration_print_step = 0;
 
-  twodscene->setLiquidInfo(info);
+  twodscene->setSimInfo(info);
 }
 
 void TwoDSceneXMLParser::loadElasticParameters(
@@ -1215,7 +1214,7 @@ void TwoDSceneXMLParser::loadElasticParameters(
     // default values:
     scalar radius = 0.018;
     scalar biradius = 0.018;
-    scalar restVolumeFraction = twodscene->getLiquidInfo().rest_volume_fraction;
+    scalar restVolumeFraction = twodscene->getSimInfo().rest_volume_fraction;
     scalar YoungsModulus = 6.687e5;
     scalar shearModulus = 2.476e5;
     scalar density = 1.3;

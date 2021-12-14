@@ -163,7 +163,7 @@ void WetClothCore::stepSystem(const scalar& dt) {
     // Check Divergence if Necessary and Comparing with the Previously
     // Recorded Divergence to Measure the Error (removed)
 
-    if (m_scene->getLiquidInfo().solve_solid) {
+    if (m_scene->getSimInfo().solve_solid) {
         // Implicitly Integrate the Elastic Objects
         m_scene_stepper->stepImplicitElasto(*m_scene, sub_dt);
         t1 = timingutils::seconds();

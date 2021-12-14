@@ -189,7 +189,7 @@ void ParticleSimulation::initializeOpenGLRenderer() {
       " group='visualization'");
   }
 
-  LiquidInfo& info = m_core->getScene()->getLiquidInfo();
+  SimInfo& info = m_core->getScene()->getSimInfo();
 
   TwAddVarRO(bar, "rest volume fraction", TW_TYPE_DOUBLE,
     &info.rest_volume_fraction,
@@ -201,9 +201,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
   TwAddVarRW(bar, "power of fraction", TW_TYPE_DOUBLE, &info.lambda,
     " min=0.0 max=3.0 step=0.1 help='Volume Fraction Power' "
     "group='dynamic parameters'");
-  TwAddVarRW(bar, "Liquid 1st-order lossless", TW_TYPE_DOUBLE, &info.flip_coeff,
-    " min=0.0 max=1.0 step=0.0001 help='Lossless of liquid 1st-order "
-    "movement' group='dynamic parameters'");
   TwAddVarRW(bar, "Solid rotation/shearing lossless", TW_TYPE_DOUBLE,
     &info.elasto_flip_asym_coeff,
     " min=0.0 max=1.0 step=0.0001 help='Lossless of solid "
@@ -416,6 +413,6 @@ void ParticleSimulation::finalInit() {
   m_scene_serializer.initializeFaceLoops(*m_core->getScene());
 }
 
-const LiquidInfo& ParticleSimulation::getLiquidInfo() {
-  return m_core->getScene()->getLiquidInfo();
+const SimInfo& ParticleSimulation::getSimInfo() {
+  return m_core->getScene()->getSimInfo();
 }
