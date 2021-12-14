@@ -20,7 +20,6 @@
 #include "DER/StrandForce.h"
 #include "ElasticParameters.h"
 #include "DistanceFields.h"
-#include "LevelSetForce.h"
 #include "LinearizedImplicitEuler.h"
 #include "ParticleSimulation.h"
 #include "RenderingUtilities.h"

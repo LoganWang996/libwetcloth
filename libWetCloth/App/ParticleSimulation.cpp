@@ -237,10 +237,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
 
   TwAddVarRW(bar, "Solve cloth/yarn", TW_TYPE_BOOLCPP, &info.solve_solid,
     " help='Calculate the dynamics of cloth/yarn' group='features'");
-  TwAddVarRW(bar, "Use levelset collision", TW_TYPE_BOOLCPP,
-    &info.use_levelset_force,
-    " help='Apply penalty force between cloth/yarn and levelset' "
-    "group='features'");
   TwAddVarRW(bar, "Use twisting force", TW_TYPE_BOOLCPP, &info.use_twist,
     " help='Apply twisting force' group='features'");
   TwAddVarRW(

@@ -148,7 +148,6 @@ void TwoDSceneXMLParser::loadParticleSimulation(
 
   scene->updateSolidPhi();
   scene->updateSolidWeights();
-  scene->updateLiquidPhi(0.0);
   scene->updateIntersection();
   scene->mapParticleNodesAPIC();
   scene->mapParticleSaturationPsiNodes();
@@ -157,10 +156,6 @@ void TwoDSceneXMLParser::loadParticleSimulation(
 
   // Forces
   scene->loadAttachForces();
-  if (scene->getLiquidInfo().use_levelset_force)
-    scene->insertForce(std::make_shared<LevelSetForce>(
-        scene,
-        scene->getCellSize() * scene->getLiquidInfo().levelset_thickness));
   loadSpringForces(node, scene);
   loadSimpleGravityForces(node, scene);
 
@@ -1187,8 +1182,7 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.elasto_advect_coeff = 0.996;
   info.particle_cell_multiplier = 0.25;
   info.levelset_young_modulus = 6.6e6;
-  info.solve_solid = true; // ?
-  info.use_levelset_force = true; // ?
+  info.solve_solid = true; 
   info.use_twist = true;
   info.use_amgpcg_solid = false;
   info.use_pcr = true;

@@ -112,9 +112,6 @@ void WetClothCore::stepSystem(const scalar& dt) {
     // Update the Orientation Field
     m_scene->updateOrientation();
 
-    // Update the Liquid Distance Field
-    m_scene->updateLiquidPhi(sub_dt);
-
     // Compute Cohesion Force
     m_scene->updateIntersection();
 

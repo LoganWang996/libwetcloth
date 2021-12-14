@@ -50,7 +50,6 @@ struct LiquidInfo {
   scalar elasto_capture_rate;
   int iteration_print_step;
   bool solve_solid;
-  bool use_levelset_force;
   bool use_twist;
   bool use_amgpcg_solid;
   bool use_pcr;
@@ -682,14 +681,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void updateGaussWeights(scalar dt);
   void computeWeights(scalar dt);
   void updateSolidWeights();
-  void updateLiquidPhi(scalar dt);
-  void extendLiquidPhi();
-  void renormalizeLiquidPhi();
-  void updateColorP();
-  void estimateVolumeFractions(std::vector<VectorXs>& volumes,
-                               const std::vector<VectorXs>& node_pos,
-                               const Vector3s& np_offset);
-  void relabelLiquidParticles();
   void updateRestPos();
   bool useAMGPCGSolid() const;
 
