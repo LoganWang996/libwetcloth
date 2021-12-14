@@ -35,9 +35,7 @@ enum NODE_STATE { NS_NONE, NS_FLUID, NS_SOLID };
 struct LiquidInfo {
   scalar liquid_density;
   scalar air_density;
-  scalar surf_tension_coeff;
   scalar viscosity;
-  scalar air_viscosity;
   scalar rest_contact_angle;
   scalar yazdchi_power;
   scalar yarn_diameter;

@@ -35,7 +35,6 @@ std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
   os << "fiber diameter: " << info.yarn_diameter << std::endl;
   os << "rest volume fraction: " << info.rest_volume_fraction << std::endl;
   os << "lambda: " << info.lambda << std::endl;
-  os << "correction strength: " << info.correction_strength << std::endl;
   os << "flip coeff: " << info.flip_coeff << std::endl;
   os << "elasto flip stretching coeff: " << info.elasto_flip_coeff << std::endl;
   os << "elasto flip-asym coeff: " << info.elasto_flip_asym_coeff << std::endl;

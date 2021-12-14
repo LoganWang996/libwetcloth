@@ -157,9 +157,6 @@ void TwoDSceneXMLParser::loadParticleSimulation(
 
   // Forces
   scene->loadAttachForces();
-  if (scene->getLiquidInfo().use_cohesion)
-    scene->insertForce(std::make_shared<CohesionForce>(scene));
-  scene->insertForce(std::make_shared<JunctionForce>(scene));
   if (scene->getLiquidInfo().use_levelset_force)
     scene->insertForce(std::make_shared<LevelSetForce>(
         scene,
@@ -1181,14 +1178,11 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.air_density = 1.2041e-3;  // dyn/cm
   info.liquid_density = 1.0;     // g/cm^3
   info.rest_contact_angle = 40.8 / 180.0 * M_PI;
-  info.surf_tension_coeff = 72.0;
   info.yazdchi_power = 1.6;
   info.viscosity = 8.9e-3;
-  info.air_viscosity = 1.81e-4;
   info.yarn_diameter = 0.01;
   info.rest_volume_fraction = 0.4;
   info.lambda = 2.0;
-  info.correction_strength = 0.2;
   info.flip_coeff = 0.996;
   info.elasto_flip_asym_coeff = 0.996;
   info.elasto_flip_coeff = 0.0;

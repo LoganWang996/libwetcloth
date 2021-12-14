@@ -17,11 +17,9 @@
 #include <limits>
 
 #include "Camera.h"
-#include "CohesionForce.h"
 #include "DER/StrandForce.h"
 #include "ElasticParameters.h"
 #include "DistanceFields.h"
-#include "JunctionForce.h"
 #include "LevelSetForce.h"
 #include "LinearizedImplicitEuler.h"
 #include "ParticleSimulation.h"

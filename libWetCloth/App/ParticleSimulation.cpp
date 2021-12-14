@@ -216,10 +216,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
   TwAddVarRW(bar, "power of fraction", TW_TYPE_DOUBLE, &info.lambda,
     " min=0.0 max=3.0 step=0.1 help='Volume Fraction Power' "
     "group='dynamic parameters'");
-  TwAddVarRW(bar, "correction strength", TW_TYPE_DOUBLE,
-    &info.correction_strength,
-    " min=0.0 max=10.0 step=0.1 help='Strength of liquid particle "
-    "correction' group='dynamic parameters'");
   TwAddVarRW(bar, "Liquid 1st-order lossless", TW_TYPE_DOUBLE, &info.flip_coeff,
     " min=0.0 max=1.0 step=0.0001 help='Lossless of liquid 1st-order "
     "movement' group='dynamic parameters'");
