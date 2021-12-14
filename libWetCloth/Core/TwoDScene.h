@@ -61,20 +61,12 @@ struct LiquidInfo {
   int iteration_print_step;
   int surf_tension_smoothing_step;
   bool use_cohesion;
-  bool solid_cohesion;
-  bool soft_cohesion;
   bool solve_solid;
-  bool use_nonlinear_drag;
-  bool use_drag;
-  bool apply_pressure_solid;
   bool use_levelset_force;
   bool apply_pressure_manifold;
   bool use_twist;
-  bool use_bicgstab;
   bool use_amgpcg_solid;
   bool use_pcr;
-  bool apply_pore_pressure_solid;
-  bool propagate_solid_velocity;
   bool compute_viscosity;
   bool use_lagrangian_mpm;
   bool use_cosolve_angular;
@@ -726,9 +718,7 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
                                const Vector3s& np_offset);
   void relabelLiquidParticles();
   void updateRestPos();
-  bool useBiCGSTAB() const;
   bool useAMGPCGSolid() const;
-  bool propagateSolidVelocity() const;
 
   void correctLiquidParticles(const scalar& dt);
 
@@ -835,9 +825,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   scalar getMaxVelocity() const;
 
   scalar getMaxFluidVelocity() const;
-
-  scalar getDragCoeff(const scalar& psi, const scalar& sat, const scalar& dv,
-                      int material) const;
 
   scalar getPlanarDragCoeff(const scalar& psi, const scalar& sat,
                             const scalar& dv, int material) const;

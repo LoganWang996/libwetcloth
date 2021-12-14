@@ -53,11 +53,7 @@ std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
   os << "bending scheme: " << info.bending_scheme << std::endl;
   os << "use cohesion: " << info.use_cohesion << std::endl;
   os << "solve solid: " << info.solve_solid << std::endl;
-  os << "use nonlinear drag: " << info.use_nonlinear_drag << std::endl;
-  os << "use drag: " << info.use_drag << std::endl;
   os << "use levelset force: " << info.use_levelset_force << std::endl;
-  os << "apply pressure manifold: " << info.apply_pressure_manifold
-     << std::endl;
   os << "use twist: " << info.use_twist << std::endl;
   os << "use amgpcg solid: " << info.use_amgpcg_solid << std::endl;
   return os;
@@ -3351,12 +3347,9 @@ scalar TwoDScene::getDragCoeffWithOrientation(const scalar& psi,
                                               const Vector3s& orientation,
                                               const scalar& shape_factor,
                                               int index, int material) const {
-  if (!m_liquid_info.use_drag || psi == 0.0 || s == 0.0 ||
-      orientation.squaredNorm() < 1e-20)
-    return 0.0;
+  return 0.0;
 
-  const scalar ergun_coeff =
-      m_liquid_info.use_nonlinear_drag ? 0.1428869017 : 0.0;
+  const scalar ergun_coeff = 0.0;
 
   const scalar di = m_liquid_info.yarn_diameter;
   const scalar ka =
@@ -3422,44 +3415,15 @@ scalar TwoDScene::getVerticalDiffusivity(const scalar& psi,
 
 scalar TwoDScene::getPlanarDragCoeff(const scalar& psi, const scalar& s,
                                      const scalar& dv, int material) const {
-  if (!m_liquid_info.use_drag || psi == 0.0 || s == 0.0) return 0.0;
+  return 0.0;
 
-  const scalar ergun_coeff =
-      m_liquid_info.use_nonlinear_drag ? 0.1428869017 : 0.0;
+  const scalar ergun_coeff = 0.0;
 
   const scalar di = m_liquid_info.yarn_diameter;
   const scalar ka = (-log(psi) - 1.476 + 2.0 * psi - 0.5 * psi * psi) /
                     (16.0 * psi) * di * di;
 
   const scalar k = std::max(1e-20, ka);
-
-  const scalar mu =
-      (material == 0) ? m_liquid_info.viscosity : m_liquid_info.air_viscosity;
-  const scalar rho = (material == 0) ? m_liquid_info.liquid_density
-                                     : m_liquid_info.air_density;
-
-  const scalar c =
-      mu / k + ergun_coeff * pow(di, m_liquid_info.yazdchi_power - 1.0) *
-                   pow(mu, 1.0 - m_liquid_info.yazdchi_power) /
-                   (pow(1.0 - psi, 1.5) * sqrt(k)) *
-                   pow(rho * fabs(dv), m_liquid_info.yazdchi_power);
-
-  return std::min(1e+63, c);
-}
-
-scalar TwoDScene::getDragCoeff(const scalar& psi, const scalar& s,
-                               const scalar& dv, int material) const {
-  if (!m_liquid_info.use_drag || psi == 0.0 || s == 0.0) return 0.0;
-
-  const scalar ergun_coeff =
-      m_liquid_info.use_nonlinear_drag ? 0.1428869017 : 0.0;
-
-  const scalar di = m_liquid_info.yarn_diameter;
-  const scalar kb = (-log(psi) - 1.476 + 2.0 * psi - 1.774 * psi * psi +
-                     4.078 * pow(psi, 3.0)) /
-                    (32.0 * psi) * di * di;
-
-  const scalar k = std::max(1e-20, kb);
 
   const scalar mu =
       (material == 0) ? m_liquid_info.viscosity : m_liquid_info.air_viscosity;
