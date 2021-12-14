@@ -49,7 +49,6 @@ std::ostream& operator<<(std::ostream& os, const LiquidInfo& info) {
   os << "particle cell multiplier: " << info.particle_cell_multiplier
      << std::endl;
   os << "levelset modulus: " << info.levelset_young_modulus << std::endl;
-  os << "correction step: " << info.correction_step << std::endl;
   os << "bending scheme: " << info.bending_scheme << std::endl;
   os << "use cohesion: " << info.use_cohesion << std::endl;
   os << "solve solid: " << info.solve_solid << std::endl;
@@ -1625,106 +1624,6 @@ void TwoDScene::updateSolidWeights() {
       bucket_weight_z(i) = mathutils::clamp(
           1.0 - mathutils::fraction_inside(phi0, phi1, phi2, phi3), 0.0, 1.0);
     }
-  });
-}
-
-/*!
- * use Ryoichi's method to relax particles
- */
-void TwoDScene::correctLiquidParticles(const scalar& dt) {
-  const int num_fluid = getNumFluidParticles();
-  const scalar dx = getCellSize();
-
-  if (num_fluid == 0) return;
-
-  m_particle_cells.sort(
-      (int)m_fluids.size(), [&](int pidx, int& i, int& j, int& k) {
-        Vector3s local_x =
-            (m_x.segment<3>(m_fluids[pidx] * 4) - m_grid_mincorner) / dx;
-        i = (int)floor(local_x(0));
-        j = (int)floor(local_x(1));
-        k = (int)floor(local_x(2));
-      });
-
-  const scalar coeff = m_liquid_info.correction_strength / dt;
-
-  const scalar iD = getInverseDCoeff();
-
-  const int correction_selector = rand() % m_liquid_info.correction_step;
-
-  m_particle_cells.for_each_bucket_particles_colored([&](int i, int cell_idx) {
-    if (i % m_liquid_info.correction_step != correction_selector) return;
-
-    const int liquid_pidx = m_fluids[i];
-
-    const Vector3s& pos = m_x.segment<3>(liquid_pidx * 4);
-    const scalar& radii = m_radius(liquid_pidx * 2 + 0);
-
-    Vector3s spring = Vector3s::Zero();
-    m_particle_cells.loop_neighbor_bucket_particles(
-        cell_idx, [&](int ni, int) -> bool {
-          if (i == ni) return false;
-
-          const int liquid_npidx = m_fluids[ni];
-
-          const Vector3s& np = m_x.segment<3>(liquid_npidx * 4);
-          const scalar nr = m_radius(liquid_npidx * 2 + 0);
-          const scalar re =
-              sqrt(radii * nr) * m_liquid_info.correction_multiplier;
-          const scalar dist = (pos - np).norm();
-          if (dist > re) return false;
-
-          const scalar w = coeff * mathutils::smooth_kernel(dist * dist, re);
-
-          if (w == 0.0) return false;
-
-          if (dist > 1e-4 * re) {
-            spring += w * (pos - np) / dist * re;
-          } else {
-            spring(0) += re * mathutils::scalarRand(0.0, 1.0);
-            spring(1) += re * mathutils::scalarRand(0.0, 1.0);
-            spring(2) += re * mathutils::scalarRand(0.0, 1.0);
-          }
-
-          return false;
-        });
-
-    Vector3s buf0 = pos + spring * dt;
-
-    const auto& node_indices_sphi = m_particle_nodes_solid_phi[liquid_pidx];
-    const auto& particle_weights = m_particle_weights[liquid_pidx];
-
-    scalar phi_ori = 0.0;
-    Vector3sT grad_phi = Vector3s::Zero();
-
-    for (int nidx = 0; nidx < node_indices_sphi.rows(); ++nidx) {
-      const int bucket_idx = node_indices_sphi(nidx, 0);
-      const int node_idx = node_indices_sphi(nidx, 1);
-
-      scalar phi;
-      if (m_bucket_activated[bucket_idx]) {
-        phi = m_node_solid_phi[bucket_idx](node_idx);
-      } else {
-        phi = 3.0 * getCellSize();
-      }
-
-      const scalar w = particle_weights(nidx, 3);
-      const Vector3s& np = m_node_pos[bucket_idx].segment<3>(node_idx * 3);
-
-      phi_ori += phi * w;
-      grad_phi += phi * iD * w * (np - pos);
-    }
-
-    if (grad_phi.norm() > 1e-20) grad_phi.normalize();
-
-    const Vector3s dpos = spring * dt;
-    const scalar phi_now = phi_ori + grad_phi * dpos;
-
-    if (phi_now < 0.0) {
-      buf0 -= phi_now * grad_phi.transpose();
-    }
-
-    m_x.segment<3>(liquid_pidx * 4) = buf0;
   });
 }
 

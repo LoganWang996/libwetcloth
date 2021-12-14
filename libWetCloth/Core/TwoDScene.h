@@ -56,7 +56,6 @@ struct LiquidInfo {
   scalar liquid_boundary_friction;
   scalar levelset_thickness;
   scalar elasto_capture_rate;
-  int correction_step;
   int bending_scheme;
   int iteration_print_step;
   int surf_tension_smoothing_step;
@@ -718,8 +717,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void relabelLiquidParticles();
   void updateRestPos();
   bool useAMGPCGSolid() const;
-
-  void correctLiquidParticles(const scalar& dt);
 
   const VectorXs& getRestPos() const;
 

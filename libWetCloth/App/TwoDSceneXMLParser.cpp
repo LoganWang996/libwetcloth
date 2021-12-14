@@ -1191,7 +1191,6 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.rest_volume_fraction = 0.4;
   info.lambda = 2.0;
   info.cohesion_coeff = 0.002;
-  info.correction_step = 8;
   info.correction_multiplier = 2.0;
   info.correction_strength = 0.2;
   info.flip_coeff = 0.996;

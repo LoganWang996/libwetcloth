@@ -240,9 +240,6 @@ void ParticleSimulation::initializeOpenGLRenderer() {
     &info.correction_strength,
     " min=0.0 max=10.0 step=0.1 help='Strength of liquid particle "
     "correction' group='dynamic parameters'");
-  TwAddVarRW(bar, "steps per correction", TW_TYPE_INT32, &info.correction_step,
-    " min=1 max=1000 step=1 help='# steps between each time of "
-    "correction' group='dynamic parameters'");
   TwAddVarRW(
     bar, "passes of curvature smoothing", TW_TYPE_INT32,
     &info.surf_tension_smoothing_step,
