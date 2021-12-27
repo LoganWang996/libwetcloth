@@ -22,7 +22,6 @@
 #include "MathUtilities.h"
 #include "ThreadUtils.h"
 #include "SpherePattern.h"
-#include "VolumeFractions.h"
 
 /*!
  * Outputting parameters for debugging

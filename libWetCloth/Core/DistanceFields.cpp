@@ -20,7 +20,6 @@
 #include "TwoDScene.h"
 #include "Array3.h"
 #include "Array3Utils.h"
-#include "MakeLevelSet3.h"
 #include "Sorter.h"
 
 using namespace mathutils;
