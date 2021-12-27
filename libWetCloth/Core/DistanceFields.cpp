@@ -376,10 +376,6 @@ DistanceFieldObject::DistanceFieldObject(
   omega.setZero();
 
   switch (type_) {
-    case DFT_FILE:
-      mesh = std::make_shared<SolidMesh>(szfn, parameter(0));
-      process_file_mesh(szfn_cache);
-      break;
     default:
       mesh = nullptr;
   }
@@ -489,50 +485,6 @@ scalar DistanceFieldObject::compute_phi(const Vector3s& pos) const {
   }
 
   return phi;
-}
-
-void DistanceFieldObject::process_file_mesh(const std::string& szfn_cache) {
-  // pre-process mesh
-  Vector3s centre = mesh->getCenter();
-  mesh->translate(-centre);
-
-  center += centre;
-
-  Vector3s bbx_min, bbx_max;
-  mesh->boundingBox(bbx_min, bbx_max);
-
-  const scalar dx = parameter(1);
-  bbx_min -= Vector3s::Constant(dx * 3.0);
-  bbx_max += Vector3s::Constant(dx * 3.0);
-
-  volume_origin = bbx_min;
-
-  // check if cache exist
-  if (!szfn_cache.empty()) {
-    std::ifstream ifs(szfn_cache, std::ios::binary);
-
-    if (ifs.good()) {
-      // read from file directly
-      read_binary_array(ifs, volume);
-      ifs.close();
-      return;
-    }
-  }
-
-  Vector3s extend = (bbx_max - bbx_min) / dx;
-
-  int nx = (int)ceil(extend(0));
-  int ny = (int)ceil(extend(1));
-  int nz = (int)ceil(extend(2));
-
-  make_level_set3(mesh->getIndices(), mesh->getVertices(), volume_origin, dx,
-                  nx, ny, nz, volume);
-
-  if (!szfn_cache.empty()) {
-    std::ofstream ofs(szfn_cache, std::ios::binary);
-    write_binary_array(ofs, volume);
-    ofs.close();
-  }
 }
 
 scalar DistanceFieldObject::compute_phi_vel(const Vector3s& pos,

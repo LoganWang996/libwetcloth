@@ -140,8 +140,6 @@ struct DistanceFieldObject : public DistanceField {
           const Eigen::Quaternion<scalar>&, const Vector3s&, const scalar&)>&)
       const;
 
-  void process_file_mesh(const std::string& szfn_cache);
-
   Vector3s center;
   VectorXs parameter;
 
