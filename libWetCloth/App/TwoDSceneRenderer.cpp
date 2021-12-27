@@ -12,7 +12,6 @@
 #include "TwoDSceneRenderer.h"
 
 #include "AttachForce.h"
-#include "DistanceFields.h"
 #include "MathUtilities.h"
 #include "TwoDimensionalDisplayController.h"
 
@@ -567,44 +566,6 @@ void TwoDSceneRenderer::renderParticleSimulation(const TwoDScene& scene,
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_POLYGON_STIPPLE);
-    const std::vector<std::shared_ptr<DistanceField> >& fields =
-        scene.getGroupDistanceField();
-    for (auto& ptr : fields) {
-      if (ptr->usage == DFU_SOLID) {
-        glColor4d(0.0, 0.0, 0.0, 0.02);
-      } else if (ptr->usage == DFU_TERMINATOR) {
-        glColor4d(0.0, 0.0, 1.0, 0.02);
-      } else {
-        continue;
-      }
-
-      for (int i = 0; i < 2; ++i) {
-        if (i == 1) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-        ptr->render([](const std::vector<Vector3s>& vertices,
-                       const std::vector<Vector3i>& indices,
-                       const Eigen::Quaternion<scalar>& rot,
-                       const Vector3s& center, const scalar&) {
-          glPushMatrix();
-          glTranslated(center(0), center(1), center(2));
-          Eigen::AngleAxis<scalar> rotaa(rot);
-          glRotated(rotaa.angle() * 180.0 / M_PI, rotaa.axis()(0),
-                    rotaa.axis()(1), rotaa.axis()(2));
-
-          glBegin(GL_TRIANGLES);
-          for (const Vector3i& idx : indices) {
-            for (int r = 0; r < 3; ++r) {
-              glVertex3dv(vertices[idx(r)].data());
-            }
-          }
-
-          glEnd();
-          glPopMatrix();
-        });
-      }
-
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
     glDisable(GL_BLEND);
     glDisable(GL_POLYGON_STIPPLE);
   }

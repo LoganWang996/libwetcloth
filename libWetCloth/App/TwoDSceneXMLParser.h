@@ -19,7 +19,6 @@
 #include "Camera.h"
 #include "DER/StrandForce.h"
 #include "ElasticParameters.h"
-#include "DistanceFields.h"
 #include "LinearizedImplicitEuler.h"
 #include "ParticleSimulation.h"
 #include "RenderingUtilities.h"

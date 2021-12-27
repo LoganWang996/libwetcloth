@@ -10,7 +10,6 @@
 
 #include "Script.h"
 
-#include "DistanceFields.h"
 #include "MathUtilities.h"
 #include "TwoDScene.h"
 

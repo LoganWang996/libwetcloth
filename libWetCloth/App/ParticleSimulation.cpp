@@ -259,19 +259,6 @@ void ParticleSimulation::computeCameraCenter(renderingutils::Viewport& view) {
     if (x(4 * i + 2) < min_z) min_z = x(4 * i + 2);
   }
 
-  const auto& gdf = m_core->getScene()->getGroupDistanceField();
-  for (const auto& df : gdf) {
-    Vector3s low, high;
-    if (df->local_bounding_box(low, high)) continue;
-    max_x = std::max(high(0), max_x);
-    max_y = std::max(high(1), max_y);
-    max_z = std::max(high(2), max_z);
-
-    min_x = std::min(low(0), min_x);
-    min_y = std::min(low(1), min_y);
-    min_z = std::min(low(2), min_z);
-  }
-
   // Set center of view to center of bounding box
   view.cx = 0.5 * (max_x + min_x);
   view.cy = 0.5 * (max_y + min_y);

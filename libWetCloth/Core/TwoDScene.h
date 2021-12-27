@@ -16,7 +16,6 @@
 #include <fstream>
 
 #include "ElasticParameters.h"
-#include "DistanceFields.h"
 #include "Force.h"
 #include "Script.h"
 #include "Sorter.h"
@@ -192,9 +191,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   int getNumNodes(int bucket_idx) const;
 
   inline bool isFluid(int pidx) const;
-
-  const std::vector<std::shared_ptr<DistanceField> >& getGroupDistanceField()
-      const;
 
   const std::vector<VectorXuc>& getNodeLiquidValidX() const;
 
@@ -720,23 +716,13 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   void resizeGroups(int num_group);
 
-  std::shared_ptr<DistanceField>& getGroupDistanceField(int igroup);
-
-  const std::shared_ptr<DistanceField>& getGroupDistanceField(int igroup) const;
-
   const VectorXuc& getOutsideInfo() const;
 
-  void sampleSolidDistanceFields();
-
   scalar computePhiVel(
-      const Vector3s& pos, Vector3s& vel,
-      const std::function<bool(const std::shared_ptr<DistanceField>&)>
-          selector = nullptr) const;
+      const Vector3s& pos, Vector3s& vel) const;
 
   scalar computePhi(
-      const Vector3s& pos,
-      const std::function<bool(const std::shared_ptr<DistanceField>&)>
-          selector = nullptr) const;
+      const Vector3s& pos) const;
 
   void dump_geometry(std::string filename);
 
@@ -1110,8 +1096,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   std::vector<std::shared_ptr<Script> > m_scripts;
 
   std::vector<scalar> m_shooting_vol_accum;
-
-  std::vector<std::shared_ptr<DistanceField> > m_group_distance_field;
 
 };
 

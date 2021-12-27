@@ -120,14 +120,13 @@ void TwoDSceneXMLParser::loadParticleSimulation(
   loadSimInfo(node, scene);
   loadBucketInfo(node, scene);
 
-  int mg_part, mg_df;
+  int mg_part = 0, mg_df = 0;
   loadParticles(node, scene, mg_part);
 
   loadElasticParameters(node, scene, dt);
 
   int maxgroup = std::max(mg_part, mg_df);
-  scene->resizeGroups(maxgroup + 1);
-  scene->sampleSolidDistanceFields();
+  scene->resizeGroups(0);
   scene->updateRestPos();
   scene->initGroupPos();
 
@@ -1667,20 +1666,6 @@ void TwoDSceneXMLParser::loadParticles(
     }
     twodscene->setFluidVolume(particle, fvol);
 
-    int group = 0;
-    if (nd->first_attribute("group")) {
-      std::string attribute(nd->first_attribute("group")->value());
-      if (!stringutils::extractFromString(attribute, group)) {
-        std::cerr << outputmod::startred
-                  << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
-                  << " Failed to parse group attribute for particle "
-                  << particle << ". Value must be integer. Exiting."
-                  << std::endl;
-        exit(1);
-      }
-    }
-    twodscene->setGroup(particle, group);
-
     // Extract the particle's mass
     scalar mass = 0.0;
     if (nd->first_attribute("m")) {
@@ -1736,9 +1721,6 @@ void TwoDSceneXMLParser::loadParticles(
     // std::cout << "Particle: " << particle << "    x: " << pos.transpose() <<
     // "   v: " << vel.transpose() << "   m: " << mass << "   fixed: " << fixed
     // << std::endl; std::cout << tags[particle] << std::endl;
-
-    maxgroup = std::max(maxgroup, group);
-
     ++particle;
   }
 }

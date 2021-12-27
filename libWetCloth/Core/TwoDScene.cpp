@@ -172,15 +172,6 @@ void TwoDScene::swapParticles(int i, int j) {
   mathutils::swap<scalar, 3>(m_fB, i, j);
 }
 
-std::shared_ptr<DistanceField>& TwoDScene::getGroupDistanceField(int igroup) {
-  return m_group_distance_field[igroup];
-}
-
-const std::shared_ptr<DistanceField>& TwoDScene::getGroupDistanceField(
-    int igroup) const {
-  return m_group_distance_field[igroup];
-}
-
 const Matrix27x4s& TwoDScene::getParticleWeights(int pidx) const {
   return m_particle_weights[pidx];
 }
@@ -1383,16 +1374,13 @@ void TwoDScene::updateStrandParamViscosity(const scalar& dt) {
  * when particles are outside a Terminator, we delete them
  */
 void TwoDScene::terminateParticles() {
-  auto term_sel = [](const std::shared_ptr<DistanceField>& dfptr) -> bool {
-    return dfptr->usage == DFU_TERMINATOR;
-  };
 
   const int num_parts = getNumParticles();
   const int num_elasto = getNumElastoParticles();
   threadutils::for_each(num_elasto, num_parts, [&](int pidx) {
     const Vector3s& pos = m_x.segment<3>(pidx * 4);
     Vector3s vel;
-    const scalar phi = computePhiVel(pos, vel, term_sel);
+    const scalar phi = computePhiVel(pos, vel);
     if (phi < 0.0) m_fluid_vol(pidx) = 0.0;
   });
 
@@ -3341,20 +3329,7 @@ void TwoDScene::resizeGroups(int num_group) {
     m_group_prev_pos[i].setZero();
   });
 
-  m_group_distance_field.resize(num_group);
   m_shooting_vol_accum.resize(num_group, 0.0);
-
-  threadutils::for_each(0, num_group, [&](int i) {
-    m_group_distance_field[i] = std::make_shared<DistanceFieldOperator>(
-        DFT_UNION, DFU_COUNT, i, 0, true);
-  });
-
-
-  threadutils::for_each(m_group_distance_field, [&](auto dfptr) {
-    dfptr->vote_param_indices();
-    dfptr->vote_usage();
-    dfptr->vote_sampled();
-  });
 }
 
 void TwoDScene::initGroupPos() {
@@ -3362,7 +3337,6 @@ void TwoDScene::initGroupPos() {
 
   for (int i = 0; i < num_group; ++i) {
     Vector3s center = Vector3s::Zero();
-    m_group_distance_field[i]->center(center);
     m_group_prev_pos[i] = m_group_pos[i] = center;
   }
 }
@@ -3378,117 +3352,20 @@ std::vector<int>& TwoDScene::getFluidIndices() { return m_fluids; }
 int TwoDScene::getNumFluidParticles() const { return (int)m_fluids.size(); }
 
 scalar TwoDScene::computePhi(
-    const Vector3s& pos,
-    const std::function<bool(const std::shared_ptr<DistanceField>&)> selector)
+    const Vector3s& pos)
     const {
   scalar min_phi = 3.0 * m_bucket_size;
-  for (auto dfptr : m_group_distance_field) {
-    if (selector && !selector(dfptr)) continue;
-
-    scalar phi = dfptr->compute_phi(pos);
-    if (phi < min_phi) {
-      min_phi = phi;
-    }
-  }
-
   return min_phi;
 }
 
 scalar TwoDScene::computePhiVel(
-    const Vector3s& pos, Vector3s& vel,
-    const std::function<bool(const std::shared_ptr<DistanceField>&)> selector)
+    const Vector3s& pos, Vector3s& vel)
     const {
   scalar min_phi = 3.0 * m_bucket_size;
   Vector3s min_vel = Vector3s::Zero();
-  for (auto dfptr : m_group_distance_field) {
-    if (selector && !selector(dfptr)) continue;
-
-    Vector3s v;
-    scalar phi = dfptr->compute_phi_vel(pos, v);
-    if (phi < min_phi) {
-      min_phi = phi;
-      min_vel = v;
-    }
-  }
-
   vel = min_vel;
 
   return min_phi;
-}
-
-/*!
- * sample particle from level set of rigid bodies
- */
-void TwoDScene::sampleSolidDistanceFields() {
-  int num_group = (int)m_group_distance_field.size();
-
-  const scalar dx = getCellSize();  // we use denser dx to prevent penetration
-
-  for (int igroup = 0; igroup < num_group; ++igroup) {
-    if (!m_group_distance_field[igroup]->sampled ||
-        m_group_distance_field[igroup]->usage != DFU_SOLID)
-      continue;
-
-    VectorXs pos;
-    VectorXs norms;
-
-    m_group_distance_field[igroup]->resample_mesh(dx, pos, norms);
-
-    //        std::cout << pos << std::endl;
-    //        std::cout << norms << std::endl;
-
-    const int df_index = getNumParticles();
-    const int df_size = pos.size() / 3;
-
-    if (df_size == 0) continue;
-
-    const int surf_index = (int)m_surfels.size();
-
-    m_surfels.resize(surf_index + df_size);
-    m_surfel_norms.resize(surf_index + df_size);
-
-    conservativeResizeParticles(df_index + df_size);
-
-    auto params =
-        m_strandParameters[m_group_distance_field[igroup]->params_index];
-
-    threadutils::for_each(0, df_size, [&](int i) {
-      const scalar rad = mathutils::defaultRadiusMultiplier() * dx * 0.5;
-      const int part_idx = df_index + i;
-      m_x.segment<4>(part_idx * 4) =
-          Vector4s(pos(i * 3 + 0), pos(i * 3 + 1), pos(i * 3 + 2), 0.0);
-      m_rest_x.segment<4>(part_idx * 4) = m_x.segment<4>(part_idx * 4);
-      m_v.segment<4>(part_idx * 4).setZero();
-      m_fluid_v.segment<4>(part_idx * 4).setZero();
-      m_m.segment<3>(part_idx * 4)
-          .setConstant(4.0 / 3.0 * M_PI * rad * rad * rad * params->m_density);
-      m_m(part_idx * 4 + 3) = m_m(part_idx * 4 + 0) * rad * rad * 0.4;
-      m_fluid_m.segment<4>(part_idx).setZero();
-      m_fluid_vol(part_idx) = 0.0;
-      m_vol(part_idx) = 4.0 / 3.0 * M_PI * rad * rad * rad;
-      m_rest_vol(part_idx) = 4.0 / 3.0 * M_PI * rad * rad * rad;
-      m_shape_factor(part_idx) = 0.0;
-      m_radius(part_idx * 2 + 0) = m_radius(part_idx * 2 + 1) = rad;
-      m_volume_fraction(part_idx) = 1.0;
-      m_rest_volume_fraction(part_idx) = 1.0;
-      m_fixed[part_idx] = 1U;
-      m_twist[part_idx] = false;
-      m_particle_rest_length(part_idx) = rad * 2.0;
-      m_particle_rest_area(part_idx) = M_PI * rad * rad;
-      m_particle_group[part_idx] = igroup;
-      m_B.block<3, 3>(part_idx * 3, 0).setZero();
-      m_fB.block<3, 3>(part_idx * 3, 0).setZero();
-      m_is_strand_tip[part_idx] = false;
-      m_div[part_idx].resize(0);
-      m_classifier[part_idx] = PC_NONE;
-      m_orientation.segment<3>(part_idx * 3) = norms.segment<3>(i * 3);
-
-      m_surfel_norms[surf_index + i] = norms.segment<3>(i * 3);
-      m_surfels[surf_index + i] = part_idx;
-      m_particle_to_surfel[part_idx] = surf_index + i;
-      m_inside[part_idx] = 0U;
-    });
-  }
 }
 
 const std::vector<int>& TwoDScene::getParticleToSurfels() const {
@@ -4130,11 +4007,6 @@ const std::vector<VectorXi>& TwoDScene::getSolveGroup() const {
 }
 
 void TwoDScene::updateVelocityDifference() { m_dv = m_v - m_saved_v; }
-
-const std::vector<std::shared_ptr<DistanceField> >&
-TwoDScene::getGroupDistanceField() const {
-  return m_group_distance_field;
-}
 
 Sorter& TwoDScene::getParticleBuckets() { return m_particle_buckets; }
 
@@ -4874,9 +4746,6 @@ void TwoDScene::stepScript(const scalar& dt, const scalar& current_time) {
  * update rigid body level set
  */
 void TwoDScene::updateSolidPhi() {
-  auto solid_sel = [](const std::shared_ptr<DistanceField>& dfptr) -> bool {
-    return dfptr->usage == DFU_SOLID;
-  };
 
   m_particle_buckets.for_each_bucket([&](int bucket_idx) {
     if (!m_bucket_activated[bucket_idx]) return;
@@ -4892,15 +4761,15 @@ void TwoDScene::updateSolidPhi() {
     for (int i = 0; i < num_nodes; ++i) {
       Vector3s vel;
       node_phi(i) =
-          computePhiVel(getNodePosSolidPhi(bucket_idx, i), vel, solid_sel);
+          computePhiVel(getNodePosSolidPhi(bucket_idx, i), vel);
 
-      computePhiVel(getNodePosX(bucket_idx, i), vel, solid_sel);
+      computePhiVel(getNodePosX(bucket_idx, i), vel);
       node_solid_vel_x(i) = vel(0);
 
-      computePhiVel(getNodePosY(bucket_idx, i), vel, solid_sel);
+      computePhiVel(getNodePosY(bucket_idx, i), vel);
       node_solid_vel_y(i) = vel(1);
 
-      computePhiVel(getNodePosZ(bucket_idx, i), vel, solid_sel);
+      computePhiVel(getNodePosZ(bucket_idx, i), vel);
       node_solid_vel_z(i) = vel(2);
     }
   });
@@ -4963,9 +4832,6 @@ void TwoDScene::applyScript(const scalar& dt) {
     m_surfel_norms[i] = q_diff * m_surfel_norms[i];
   });
 
-  const int num_gdf = m_group_distance_field.size();
-  threadutils::for_each(0, num_gdf,
-                        [&](int i) { m_group_distance_field[i]->advance(dt); });
 }
 
 void TwoDScene::checkConsistency() {

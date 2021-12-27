@@ -256,67 +256,7 @@ void TwoDSceneSerializer::updateFluid(const TwoDScene& scene,
 
 void TwoDSceneSerializer::updateMesh(const TwoDScene& scene,
                                      SerializePacket* data) {
-  const std::vector<std::shared_ptr<DistanceField> >& fields =
-      scene.getGroupDistanceField();
-  for (auto& ptr : fields) {
-    if (ptr->usage != DFU_SOLID) continue;
-
-    ptr->render([&](const std::vector<Vector3s>& vertices,
-                    const std::vector<Vector3i>& indices,
-                    const Eigen::Quaternion<scalar>& rot,
-                    const Vector3s& center, const scalar& sign) {
-      if (sign > 0.0) {
-        const int vert_base_idx = (int)data->m_internal_vertices.size();
-
-        for (size_t i = 0; i < vertices.size(); ++i) {
-          Eigen::Quaternion<scalar> rotp(0.0, vertices[i](0), vertices[i](1),
-                                         vertices[i](2));
-          Vector3s rot_x = (rot * rotp * rot.inverse()).vec() + center;
-
-          data->m_internal_vertices.push_back(rot_x);
-        }
-
-        for (size_t i = 0; i < indices.size(); ++i) {
-          data->m_internal_indices.push_back(
-              indices[i] +
-              Vector3i(vert_base_idx, vert_base_idx, vert_base_idx));
-        }
-      } else {
-        int vert_base_idx = (int)data->m_external_vertices.size();
-
-        for (size_t i = 0; i < vertices.size(); ++i) {
-          Eigen::Quaternion<scalar> rotp(0.0, vertices[i](0), vertices[i](1),
-                                         vertices[i](2));
-          Vector3s rot_x = (rot * rotp * rot.inverse()).vec() + center;
-
-          data->m_external_vertices.push_back(rot_x);
-        }
-
-        for (size_t i = 0; i < indices.size(); ++i) {
-          Vector3i tri_inversed =
-              Vector3i(indices[i](0), indices[i](2), indices[i](1));
-          data->m_external_indices.push_back(
-              tri_inversed +
-              Vector3i(vert_base_idx, vert_base_idx, vert_base_idx));
-        }
-
-        vert_base_idx = (int)data->m_external_vertices.size();
-        for (size_t i = 0; i < vertices.size(); ++i) {
-          Eigen::Quaternion<scalar> rotp(0.0, vertices[i](0), vertices[i](1),
-                                         vertices[i](2));
-          Vector3s rot_x = (rot * rotp * rot.inverse()).vec() * 1.01 + center;
-
-          data->m_external_vertices.push_back(rot_x);
-        }
-
-        for (size_t i = 0; i < indices.size(); ++i) {
-          data->m_external_indices.push_back(
-              indices[i] +
-              Vector3i(vert_base_idx, vert_base_idx, vert_base_idx));
-        }
-      }
-    });
-  }
+  
 }
 
 void TwoDSceneSerializer::initializeFaceLoops(const TwoDScene& scene) {
