@@ -20,10 +20,7 @@ class TwoDScene;
 
 struct Script {
   enum TYPE {
-    ROTATE,
-    TRANSLATE,
     TWIST,
-
     TYPE_COUNT
   };
 
@@ -31,7 +28,6 @@ struct Script {
     CUBIC,
     COSINE,
     WENO,
-
     FUNC_COUNT
   };
 

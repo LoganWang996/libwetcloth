@@ -479,11 +479,7 @@ void TwoDSceneXMLParser::loadScripts(
     typend = nd->first_attribute("type");
     if (typend) {
       std::string handlertype(typend->value());
-      if (handlertype == "rotate")
-        scr->type = Script::ROTATE;
-      else if (handlertype == "translate")
-        scr->type = Script::TRANSLATE;
-      else if (handlertype == "twist")
+      if (handlertype == "twist")
         scr->type = Script::TWIST;
       else {
         std::cerr << outputmod::startred
